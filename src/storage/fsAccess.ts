@@ -1,7 +1,7 @@
 // Lese-/Schreibzugriff über die File System Access API (Chromium: Chrome, Edge, Brave, Opera …).
 
 import { NotFoundError } from '../crypto/errors';
-import type { StorageEntry, VaultStorage, WriteSource } from './types';
+import type { StorageEntry, StorageStat, VaultStorage, WriteSource } from './types';
 
 export function fsAccessSupported(): boolean {
   return typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
@@ -65,6 +65,11 @@ export class FsAccessStorage implements VaultStorage {
       if (isNotFound(e)) throw new NotFoundError(`Datei nicht gefunden: ${path.join('/')}`);
       throw e;
     }
+  }
+
+  async stat(path: string[]): Promise<StorageStat> {
+    const f = await this.getFile(path);
+    return { size: f.size, lastModified: f.lastModified };
   }
 
   async writeFile(path: string[], data: WriteSource): Promise<void> {

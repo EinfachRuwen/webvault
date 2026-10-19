@@ -2,7 +2,7 @@
 // Der Nutzer wählt den Ordner über <input webkitdirectory> oder per Drag & Drop.
 
 import { NotFoundError, ReadOnlyError } from '../crypto/errors';
-import type { StorageEntry, VaultStorage } from './types';
+import type { StorageEntry, StorageStat, VaultStorage } from './types';
 
 interface Node {
   dirs: Map<string, Node>;
@@ -74,6 +74,11 @@ export class FileListStorage implements VaultStorage {
     const file = this.node(path.slice(0, -1)).files.get(path[path.length - 1]);
     if (!file) throw new NotFoundError(`Datei nicht gefunden: ${path.join('/')}`);
     return file;
+  }
+
+  async stat(path: string[]): Promise<StorageStat> {
+    const f = await this.getFile(path);
+    return { size: f.size, lastModified: f.lastModified };
   }
 
   async writeFile(): Promise<void> {

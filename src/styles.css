@@ -100,6 +100,13 @@ progress { width: 100%; height: 0.5rem; accent-color: var(--accent); }
 }
 .dropzone.dragging { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 .dropzone p { margin: 0; }
+.start-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+.center { text-align: center; }
+.zip-help { margin-top: 1rem; color: var(--muted); font-size: 0.92rem; }
+.zip-help summary { cursor: pointer; color: var(--text); }
+.zip-help ol { margin: 0.6rem 0 0; padding-left: 1.3rem; display: grid; gap: 0.3rem; }
+.steps { padding-left: 1.3rem; display: grid; gap: 0.35rem; }
+.modal.export-modal { width: min(36rem, calc(100vw - 2rem)); height: auto; max-height: calc(100vh - 2rem); overflow: auto; }
 .dropzone-icon { font-size: 2.6rem; color: var(--folder); }
 .facts { list-style: none; padding: 0; margin: 2rem 0 0; display: grid; gap: 0.75rem; color: var(--muted); font-size: 0.92rem; }
 .facts strong { color: var(--text); }

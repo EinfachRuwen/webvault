@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { NotFoundError } from '../../src/crypto/errors';
-import type { StorageEntry, VaultStorage, WriteSource } from '../../src/storage/types';
+import type { StorageEntry, StorageStat, VaultStorage, WriteSource } from '../../src/storage/types';
 
 /** VaultStorage auf einem echten Verzeichnis – nur für Tests. */
 export class NodeStorage implements VaultStorage {
@@ -31,6 +31,14 @@ export class NodeStorage implements VaultStorage {
       const full = this.p(segs);
       const [buf, st] = await Promise.all([fs.readFile(full), fs.stat(full)]);
       return new File([buf], segs[segs.length - 1], { lastModified: st.mtimeMs });
+    } catch {
+      throw new NotFoundError(segs.join('/'));
+    }
+  }
+  async stat(segs: string[]): Promise<StorageStat> {
+    try {
+      const st = await fs.stat(this.p(segs));
+      return { size: st.size, lastModified: st.mtimeMs };
     } catch {
       throw new NotFoundError(segs.join('/'));
     }

@@ -1,7 +1,9 @@
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Crumb, DirListing, IndexedEntry, Vault, VaultEntry } from '../vault/vault';
+import { isStaged } from '../storage/staged';
 import { collectDropped, itemsFromFileList } from './dropped';
-import { downloadEntries } from './download';
+import { downloadEntries, exportStagedChanges } from './download';
+import { ExportDialog } from './ExportDialog';
 import { fileInfo } from './fileTypes';
 import { errorMessage, formatBytes, formatDate } from './format';
 import {
@@ -23,7 +25,8 @@ interface Row {
 type Dialog =
   | { type: 'newFolder' }
   | { type: 'rename'; entry: VaultEntry }
-  | { type: 'delete'; entries: VaultEntry[] };
+  | { type: 'delete'; entries: VaultEntry[] }
+  | { type: 'export' };
 
 const MAX_SEARCH_ROWS = 500;
 const keyOf = (e: VaultEntry) => e.storagePath.join('/');
@@ -41,6 +44,9 @@ function EntryIcon({ entry }: { entry: VaultEntry }) {
 
 export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => void }) {
   const writable = vault.writable;
+  /** Änderungspaket-Modus: Tresor ist nur lesbar, Neues wird gesammelt und exportiert. */
+  const staged = isStaged(vault.storage) ? vault.storage : null;
+  const [pending, setPending] = useState(() => staged?.pending() ?? { files: 0, bytes: 0 });
   const { transfers, run, cancel, dismiss, clearFinished } = useTransfers();
 
   // Navigation
@@ -117,8 +123,17 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
     indexGeneration.current++;
     setIndex(null);
     setMeta(new Map());
+    if (staged) setPending(staged.pending());
     reload();
-  }, [reload]);
+  }, [reload, staged]);
+
+  // Nicht exportierte Änderungen: vor versehentlichem Schließen des Tabs warnen
+  useEffect(() => {
+    if (pending.files === 0) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [pending.files]);
 
   // Zeilen
   const rows: Row[] = useMemo(() => {
@@ -208,6 +223,15 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
     void run('rename', `„${entry.name}“ → „${name}“`, () => vault.renameEntry(entry, name)).then(afterChange);
   };
 
+  const doExport = () => {
+    if (!staged) return;
+    setDialog(null);
+    void run('download', 'Änderungspaket erstellen', async (ctl) => {
+      const done = await exportStagedChanges(staged, ctl);
+      if (!done) throw new DOMException('abgebrochen', 'AbortError');
+    });
+  };
+
   const doNewFolder = async (name: string) => {
     setDialog(null);
     try {
@@ -271,6 +295,13 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
         {!writable && (
           <p className="alert alert-info">Schreibgeschützt: Dieser Browser erlaubt keinen Schreibzugriff auf Ordner. Hochladen, Umbenennen und Löschen sind deaktiviert (Chrome/Edge verwenden).</p>
         )}
+        {staged && (
+          <p className="alert alert-info">
+            <strong>Änderungspaket-Modus:</strong> Dieser Browser kann nicht direkt in den Tresor-Ordner schreiben. Ansehen, Suchen und Herunterladen funktionieren normal.
+            Neu Hochgeladenes wird verschlüsselt gesammelt und lässt sich als <strong>Änderungspaket</strong> herunterladen. Vorhandene Dateien können hier nicht gelöscht oder
+            umbenannt werden (dafür Chrome, Edge oder Opera am Computer nutzen).
+          </p>
+        )}
         {notice && (
           <p className="alert alert-error" role="alert">
             {notice} <button className="link-btn" onClick={() => setNotice(undefined)}>OK</button>
@@ -288,11 +319,25 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
             ))}
           </nav>
           <div className="actions">
+            {staged && pending.files > 0 && (
+              <button className="btn btn-primary" onClick={() => setDialog({ type: 'export' })}>
+                <DownloadIcon /> Änderungspaket ({pending.files})
+              </button>
+            )}
             {selected.size > 0 ? (
               <>
                 <span className="muted">{selected.size} ausgewählt</span>
                 <button className="btn" onClick={() => doDownload(selectedEntries)}><DownloadIcon /> Herunterladen</button>
-                {writable && <button className="btn btn-danger-outline" onClick={() => setDialog({ type: 'delete', entries: selectedEntries })}><TrashIcon /> Löschen</button>}
+                {writable && (
+                  <button
+                    className="btn btn-danger-outline"
+                    disabled={selectedEntries.some((e) => e.removable === false)}
+                    title={selectedEntries.some((e) => e.removable === false) ? 'Originale lassen sich in diesem Browser nicht löschen' : undefined}
+                    onClick={() => setDialog({ type: 'delete', entries: selectedEntries })}
+                  >
+                    <TrashIcon /> Löschen
+                  </button>
+                )}
               </>
             ) : (
               writable && (
@@ -361,10 +406,26 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
                         <button className="icon-btn" onClick={() => doDownload([entry])} title="Herunterladen" aria-label={`${entry.name} herunterladen`}><DownloadIcon /></button>
                       )}
                       {writable && entry.kind !== 'symlink' && (
-                        <button className="icon-btn" onClick={() => setDialog({ type: 'rename', entry })} title="Umbenennen" aria-label={`${entry.name} umbenennen`}><PencilIcon /></button>
+                        <button
+                          className="icon-btn"
+                          disabled={entry.removable === false}
+                          onClick={() => setDialog({ type: 'rename', entry })}
+                          title={entry.removable === false ? 'Originale lassen sich in diesem Browser nicht umbenennen' : 'Umbenennen'}
+                          aria-label={`${entry.name} umbenennen`}
+                        >
+                          <PencilIcon />
+                        </button>
                       )}
                       {writable && (
-                        <button className="icon-btn" onClick={() => setDialog({ type: 'delete', entries: [entry] })} title="Löschen" aria-label={`${entry.name} löschen`}><TrashIcon /></button>
+                        <button
+                          className="icon-btn"
+                          disabled={entry.removable === false}
+                          onClick={() => setDialog({ type: 'delete', entries: [entry] })}
+                          title={entry.removable === false ? 'Originale lassen sich in diesem Browser nicht löschen' : 'Löschen'}
+                          aria-label={`${entry.name} löschen`}
+                        >
+                          <TrashIcon />
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -396,6 +457,7 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
       {preview && (
         <Preview vault={vault} entry={preview} siblings={previewable} onNavigate={(e) => void vault.withMetadata(e).then(setPreview)} onDownload={(e) => doDownload([e])} onClose={() => setPreview(null)} />
       )}
+      {dialog?.type === 'export' && <ExportDialog pending={pending} onExport={doExport} onClose={() => setDialog(null)} />}
       {dialog?.type === 'newFolder' && (
         <PromptDialog title="Neuer Ordner" label="Name des Ordners" confirmLabel="Anlegen" onSubmit={doNewFolder} onClose={() => setDialog(null)} />
       )}

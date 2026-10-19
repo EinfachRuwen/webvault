@@ -1,9 +1,11 @@
 import { type FormEvent, useState } from 'react';
+import { isStaged } from '../storage/staged';
 import type { VaultStorage } from '../storage/types';
 import { Vault } from '../vault/vault';
 import { WrongPasswordError } from '../crypto/errors';
 import { errorMessage } from './format';
 import { ArrowLeftIcon, EyeIcon, EyeOffIcon, FolderIcon } from './icons';
+import { ConfirmDialog } from './Modal';
 
 export function UnlockScreen({ storage, onUnlocked, onBack }: { storage: VaultStorage; onUnlocked: (v: Vault) => void; onBack: () => void }) {
   const [password, setPassword] = useState('');
@@ -11,6 +13,8 @@ export function UnlockScreen({ storage, onUnlocked, onBack }: { storage: VaultSt
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string>();
+  const [confirmBack, setConfirmBack] = useState(false);
+  const pending = isStaged(storage) ? storage.pending() : null;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,11 +36,13 @@ export function UnlockScreen({ storage, onUnlocked, onBack }: { storage: VaultSt
   return (
     <div className="start">
       <form className="card unlock" onSubmit={submit}>
-        <button type="button" className="link-btn back" onClick={onBack} disabled={busy}>
+        <button type="button" className="link-btn back" onClick={() => (pending && pending.files > 0 ? setConfirmBack(true) : onBack())} disabled={busy}>
           <ArrowLeftIcon /> Anderen Tresor wählen
         </button>
         <div className="vault-name"><FolderIcon /> <strong>{storage.name}</strong></div>
-        {!storage.writable && <p className="hint">Schreibgeschützt geöffnet (Browser ohne Ordner-Schreibzugriff).</p>}
+        {pending && pending.files > 0 && (
+          <p className="alert alert-info">Es liegen noch <strong>{pending.files} nicht exportierte Änderungen</strong> vor. Nach dem Entsperren kannst du sie als Änderungspaket herunterladen.</p>
+        )}
 
         <label className="field">
           <span>Tresor-Passwort</span>
@@ -68,6 +74,16 @@ export function UnlockScreen({ storage, onUnlocked, onBack }: { storage: VaultSt
           {busy ? 'Entsperre …' : 'Entsperren'}
         </button>
       </form>
+      {confirmBack && (
+        <ConfirmDialog
+          title="Nicht exportierte Änderungen verwerfen?"
+          danger
+          confirmLabel="Verwerfen"
+          message={<p>Die gesammelten neuen Dateien wurden noch nicht als Änderungspaket heruntergeladen und gehen verloren, wenn du einen anderen Tresor wählst.</p>}
+          onConfirm={onBack}
+          onClose={() => setConfirmBack(false)}
+        />
+      )}
     </div>
   );
 }

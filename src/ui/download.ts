@@ -1,4 +1,5 @@
 import type { Vault, VaultEntry } from '../vault/vault';
+import type { StagedStorage } from '../storage/staged';
 import { ZipWriter } from './zip';
 import type { TransferControl } from './transfers';
 
@@ -117,6 +118,43 @@ export async function downloadEntries(vault: Vault, entries: VaultEntry[], ctl: 
       }
       await zip.finish();
     }
+    await sink.close();
+    return true;
+  } catch (e) {
+    await sink.abort().catch(() => {});
+    throw e;
+  }
+}
+
+async function* blobChunks(blob: Blob): AsyncGenerator<Uint8Array> {
+  const SLICE = 4 * 1024 * 1024;
+  for (let pos = 0; pos < blob.size; pos += SLICE) yield new Uint8Array(await blob.slice(pos, pos + SLICE).arrayBuffer());
+}
+
+/**
+ * Exportiert die gesammelten (bereits verschlüsselten) Änderungen als ZIP mit tresor-relativen Pfaden (`d/AB/…`),
+ * das der Nutzer in den Tresor-Ordner kopiert. Gibt `false` zurück, wenn der Speicherdialog abgebrochen wurde.
+ */
+export async function exportStagedChanges(staged: StagedStorage, ctl: TransferControl): Promise<boolean> {
+  const files = staged.pendingFiles();
+  const total = files.reduce((n, f) => n + f.blob.size, 0);
+  const sink = await openSink('WebVault-Aenderungen.zip');
+  if (!sink) return false;
+  try {
+    const zip = new ZipWriter((chunk) => sink.write(chunk));
+    let done = 0;
+    for (const f of files) {
+      ctl.signal.throwIfAborted();
+      const source = (async function* () {
+        for await (const chunk of blobChunks(f.blob)) {
+          done += chunk.length;
+          ctl.progress(done, total);
+          yield chunk;
+        }
+      })();
+      await zip.addFile(f.path.join('/'), source, new Date(f.modified));
+    }
+    await zip.finish();
     await sink.close();
     return true;
   } catch (e) {

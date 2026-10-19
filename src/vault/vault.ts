@@ -24,6 +24,8 @@ export interface VaultEntry {
   storagePath: string[];
   /** Pfad der Nutzdaten (verschlüsselte Datei bzw. dir.c9r / symlink.c9r) */
   payloadPath: string[];
+  /** `false`, wenn der Speicher Löschen/Umbenennen dieses Eintrags nicht erlaubt (z. B. Original im Änderungspaket-Modus) */
+  removable?: boolean;
 }
 
 export interface DirListing {
@@ -171,10 +173,11 @@ export class Vault {
       const entry: VaultEntry = { name, kind, parentDirId, storagePath, payloadPath };
       if (kind === 'directory') entry.dirId = (await readText(this.storage, payloadPath)).trim();
       if (kind === 'file' && stat) {
-        const file = await this.storage.getFile(payloadPath);
-        entry.size = this.content.cleartextSize(file.size);
-        entry.modified = file.lastModified;
+        const st = await this.storage.stat(payloadPath);
+        entry.size = this.content.cleartextSize(st.size);
+        entry.modified = st.lastModified;
       }
+      if (this.storage.canRemove) entry.removable = await this.storage.canRemove(storagePath);
       return entry;
     } catch {
       return null;
@@ -225,8 +228,8 @@ export class Vault {
   /** Größe/Datum nachladen (für Einträge aus dem Index). */
   async withMetadata(entry: VaultEntry): Promise<VaultEntry> {
     if (entry.kind !== 'file' || entry.size !== undefined) return entry;
-    const file = await this.storage.getFile(entry.payloadPath);
-    return { ...entry, size: this.content.cleartextSize(file.size), modified: file.lastModified };
+    const st = await this.storage.stat(entry.payloadPath);
+    return { ...entry, size: this.content.cleartextSize(st.size), modified: st.lastModified };
   }
 
   // ---------------------------------------------------------------- Schreiben
@@ -259,6 +262,15 @@ export class Vault {
     for (let i = 1; ; i++) {
       const candidate = `${stem} (${i})${ext}`;
       if (!taken.has(candidate)) return candidate;
+    }
+  }
+
+  /** Vor jeder verändernden Operation: darf der Speicher diesen Eintrag entfernen? (nicht im Änderungspaket-Modus bei Originalen) */
+  private async assertRemovable(entry: VaultEntry): Promise<void> {
+    if (this.storage.canRemove && !(await this.storage.canRemove(entry.storagePath))) {
+      throw new VaultError(
+        `„${entry.name}“ gehört zum Original-Tresor und kann in diesem Browser nicht gelöscht oder umbenannt werden (nur in Chrome, Edge oder Opera).`,
+      );
     }
   }
 
@@ -318,6 +330,7 @@ export class Vault {
 
   async deleteEntry(entry: VaultEntry): Promise<void> {
     this.requireWritable();
+    await this.assertRemovable(entry);
     if (entry.kind === 'directory' && entry.dirId !== undefined) await this.deleteDirectoryContents(entry.dirId);
     await this.storage.remove(entry.storagePath, true);
   }
@@ -342,6 +355,7 @@ export class Vault {
   async renameEntry(entry: VaultEntry, newName: string): Promise<void> {
     this.requireWritable();
     if (entry.kind === 'symlink') throw new VaultError('Symlinks können nicht umbenannt werden.');
+    await this.assertRemovable(entry);
     if (newName.normalize('NFC') === entry.name.normalize('NFC')) return;
     await this.assertNameFree(entry.parentDirId, newName);
     const loc = await this.locate(entry.parentDirId, newName, entry.kind);

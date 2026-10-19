@@ -10,7 +10,7 @@ Komplett clientseitig: kein Backend, kein Upload, kein Konto. Als statische Seit
 - **Suchen** im aktuellen Ordner oder – per Index – im gesamten Tresor (nur Dateinamen)
 - **Vorschau** direkt im Browser: Bilder, Video, Audio, PDF, Text/Code (←/→ blättert durch den Ordner)
 - **Herunterladen** entschlüsselt: einzelne Dateien gestreamt, Ordner/Mehrfachauswahl als ZIP
-- **Hochladen** per Dialog oder Drag & Drop (auch ganze Ordner), Dateien werden vor dem Schreiben verschlüsselt
+- **Hochladen** per Dialog oder Drag & Drop (auch ganze Ordner); Dateien werden vor dem Schreiben verschlüsselt
 - **Neuer Ordner, Umbenennen, Löschen**
 - Automatische **Sperre** nach 15 Minuten Inaktivität
 
@@ -28,17 +28,37 @@ Komplett clientseitig: kein Backend, kein Upload, kein Konto. Als statische Seit
 
 ## Funktionsweise im Browser
 
-| Browser | Zugriff auf den Tresor-Ordner |
-| --- | --- |
-| Chrome, Edge, Brave, Opera (Desktop) | **Lesen und Schreiben** über die File System Access API (`showDirectoryPicker`) |
-| Firefox, Safari, Mobilbrowser | **Nur Lesen** (`<input webkitdirectory>` / Drag & Drop); Hoch-/Löschen/Umbenennen sind deaktiviert |
+Welche Möglichkeiten es gibt, hängt davon ab, ob der Browser in lokale Ordner **schreiben** darf. Das kann nur die File System Access API
+(`showDirectoryPicker`), und die gibt es nur in Chromium-Browsern am Computer. In Firefox und Safari existiert sie nicht – das ist eine Browser-Grenze.
+
+| Browser / Gerät | So öffnest du den Tresor | Was geht |
+| --- | --- | --- |
+| **Chrome, Edge, Opera** (Desktop) | Tresor-Ordner auswählen | Alles: lesen, hochladen, löschen, umbenennen – direkt im Ordner |
+| **Brave** (Desktop) | wie Chrome, aber die File System Access API ist dort standardmäßig aus (`brave://flags/#file-system-access-api`); ohne Flag verhält sich Brave wie Firefox | siehe Chrome bzw. Firefox |
+| **Firefox, Safari** (Desktop) | Tresor-Ordner auswählen (`webkitdirectory`) oder per Drag & Drop | Lesen, Vorschau, Suche, Download. Hochladen/Neuer Ordner im **Änderungspaket-Modus** (s. u.) |
+| **Handy, Tablet** (iOS, Android) | Tresor in der Dateien-App zu einer **ZIP-Datei** komprimieren und diese öffnen | wie Firefox/Safari; Einspielen der Änderungen am Computer ist am sichersten |
+
+### Änderungspaket-Modus
+
+Wenn der Browser nicht in den Ordner schreiben darf, bleibt der Tresor schreibgeschützt. Neue Dateien und Ordner werden **bereits verschlüsselt** gesammelt und lassen sich als
+ZIP („Änderungspaket“) herunterladen. Dessen Ordner `d` kopierst du in den Tresor-Ordner und wählst **„Zusammenführen“** – dort liegen dann ausschließlich neue Dateien.
+
+> **Achtung (Mac):** Der Finder bietet „Zusammenführen“ nur bei gehaltener Wahltaste (⌥) an, sonst nur „Ersetzen“ – das würde Tresor-Inhalte löschen. Mach vorher eine Sicherung.
+
+Weil ein ZIP nichts löschen kann, lassen sich in diesem Modus nur in der Sitzung neu angelegte Einträge löschen oder umbenennen, nicht die Originale.
+Beim Sperren bleiben gesammelte Änderungen erhalten (es ist nur Chiffrat), beim Schließen des Tabs gehen sie verloren – der Browser warnt davor.
+
+### ZIP-Modus (Handy/Tablet)
+
+Der ZIP-Tresor wird nicht hochgeladen oder entpackt, sondern nur lokal gelesen (nur das Inhaltsverzeichnis, Inhalte erst bei Bedarf). Unterstützt: gespeichert und Deflate, ZIP64 (> 65.535 Dateien),
+Oberordner im ZIP, Mac-Metadaten (`__MACOSX`) werden ignoriert.
 
 Der Tresor-Ordner muss lokal vorliegen (z. B. über Dropbox/iCloud/OneDrive/Nextcloud synchronisiert oder von einem USB-Stick).
-Wähle den Ordner, der `vault.cryptomator` und `masterkey.cryptomator` enthält.
 
 ## Nicht unterstützt (bisher)
 
-Tresor-Erstellung, Formate ≤ 6, Tresore mit externem Schlüsselspeicher (Cryptomator Hub), Symlinks, Verschieben zwischen Ordnern, Dateien > 4 GB im ZIP-Export,
+Tresor-Erstellung, Formate ≤ 6, Tresore mit externem Schlüsselspeicher (Cryptomator Hub), Symlinks, Verschieben zwischen Ordnern, Löschen/Umbenennen von Originalen im Änderungspaket-Modus,
+Direktzugriff auf Cloud-Speicher (WebDAV, Dropbox …), Dateien > 4 GB im ZIP-Export,
 Streaming-Wiedergabe sehr großer Videos (Vorschau lädt bis 256 MB komplett in den Speicher; größere Dateien lassen sich herunterladen).
 
 ## Entwicklung
@@ -58,6 +78,8 @@ npm run e2e          # Browser-Tests (benötigt: npx playwright install chromium
 - `tests/write.test.ts` – Upload/Ordner/Umbenennen/Löschen und erneutes Lesen; mit `WEBVAULT_KEEP=<dir>` entsteht ein Tresor, den die Java-Referenz gegenlesen kann
   (siehe [`tests/reference/README.md`](tests/reference/README.md)). Dieser Gegenlese-Test wurde mit Ergebnis „bitgenau identisch“ durchgeführt –
   auch für einen Tresor, der von der Browser-Oberfläche selbst geschrieben wurde.
+- `tests/zipRead.test.ts` – ZIP-Leser inkl. ZIP64, gegen echte Info-ZIP-Archive eines Tresors (Deflate, `-fz`, gespeichert)
+- `tests/staged.test.ts` – Änderungspaket-Modus: schreibgeschützter Tresor + Überlagerung → Export → Einspielen → erneut lesen
 - `tests/e2e/` – Chromium-Tests gegen den Produktions-Build, ausgeliefert mit den CSP-Headern aus `vercel.json`
 
 ## Deployment auf Vercel
@@ -73,7 +95,7 @@ Alternativ per CLI: `npx vercel --prod`.
 
 ```
 src/crypto/    Cryptomator-Kryptografie (SIV, Masterkey, Namen, Dateiinhalt) – keine UI-Abhängigkeit
-src/storage/   Ordnerzugriff: File System Access API (lesen/schreiben) und FileList (nur lesen)
+src/storage/   Ordnerzugriff: File System Access API (lesen/schreiben), FileList und ZIP (nur lesen), StagedStorage (Überlagerung für Änderungspakete)
 src/vault/     Vault: entsperren, auflisten, lesen, hochladen, anlegen, umbenennen, löschen, indexieren
 src/ui/        React-Oberfläche
 tests/         Unit-, Interop- und Browser-Tests; fixtures/ = von der Referenzimplementierung erzeugte Tresore

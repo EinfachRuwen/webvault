@@ -3,6 +3,11 @@ export interface StorageEntry {
   kind: 'file' | 'directory';
 }
 
+export interface StorageStat {
+  size: number;
+  lastModified: number;
+}
+
 export type WriteSource = Blob | Uint8Array | AsyncIterable<Uint8Array>;
 
 /**
@@ -19,9 +24,17 @@ export interface VaultStorage {
   exists(path: string[]): Promise<boolean>;
   /** Wirft NotFoundError. */
   getFile(path: string[]): Promise<File>;
+  /** Größe und Änderungsdatum, ohne den Inhalt zu lesen/entpacken. Wirft NotFoundError. */
+  stat(path: string[]): Promise<StorageStat>;
 
   /** Legt fehlende Elternverzeichnisse an und ersetzt eine vorhandene Datei. */
   writeFile(path: string[], data: WriteSource): Promise<void>;
   makeDir(path: string[]): Promise<void>;
   remove(path: string[], recursive?: boolean): Promise<void>;
+
+  /**
+   * Optional: `false`, wenn dieser Pfad in diesem Speicher nicht gelöscht werden darf
+   * (z. B. Originaldateien eines nur gestagten Tresors). Fehlt die Methode, ist alles löschbar.
+   */
+  canRemove?(path: string[]): Promise<boolean>;
 }

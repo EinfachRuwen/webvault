@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { isStaged } from './storage/staged';
 import type { VaultStorage } from './storage/types';
 import type { Vault } from './vault/vault';
 import { BrowserScreen } from './ui/BrowserScreen';
@@ -16,8 +17,14 @@ export function App() {
 
   const lock = useCallback((idle = false) => {
     setLockedByIdle(idle);
-    // Vault-Objekt (und damit alle Schlüssel) wird freigegeben und vom GC eingesammelt.
-    setPhase({ name: 'start' });
+    // Das Vault-Objekt (und damit alle Schlüssel) wird freigegeben. Gesammelte, nicht exportierte Änderungen
+    // sind reines Chiffrat und bleiben erhalten: Es geht zurück zum Entsperren statt zur Startseite.
+    setPhase((prev) => {
+      if (prev.name === 'open' && isStaged(prev.vault.storage) && prev.vault.storage.pending().files > 0) {
+        return { name: 'unlock', storage: prev.vault.storage };
+      }
+      return { name: 'start' };
+    });
   }, []);
 
   useEffect(() => {
@@ -44,7 +51,12 @@ export function App() {
         </>
       );
     case 'unlock':
-      return <UnlockScreen storage={phase.storage} onUnlocked={(vault) => setPhase({ name: 'open', vault })} onBack={() => setPhase({ name: 'start' })} />;
+      return (
+        <>
+          {lockedByIdle && <p className="alert alert-info idle-note">Der Tresor wurde nach 15 Minuten Inaktivität automatisch gesperrt.</p>}
+          <UnlockScreen storage={phase.storage} onUnlocked={(vault) => setPhase({ name: 'open', vault })} onBack={() => setPhase({ name: 'start' })} />
+        </>
+      );
     case 'open':
       return <BrowserScreen vault={phase.vault} onLock={() => lock(false)} />;
   }
