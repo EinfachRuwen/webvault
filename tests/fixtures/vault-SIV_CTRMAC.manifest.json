@@ -1,0 +1,12 @@
+[
+  {"path":"/hello.txt","size":15,"sha256":"d9b3fe15c6fabc876d8a7e32ad762e00520296b7a5eb2847c0c09580dccb3528"},
+  {"path":"/empty.bin","size":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  {"path":"/exact-chunk.bin","size":32768,"sha256":"90a11417fbb417f12647007ac5ff67df52b58fe6addfef6fea5d7b973af162de"},
+  {"path":"/multi-chunk.bin","size":98309,"sha256":"62871d4b2beb2e5997ca5eac909a5e11008058c4b18e9489e52c2fe02c2f4450"},
+  {"path":"/\u00dcn\u00efc\u00f6d\u00e9 \u2013 \u65e5\u672c\u8a9e.txt","size":7,"sha256":"2fcf76a4c3c75b1fb5288d83d62dd114dc556d16fba206ab35d38bfe294a2857"},
+  {"path":"/docs/readme.md","size":9,"sha256":"9d30855a2ada542760d1a9de78920f0e1ed6b45c2aa1780ecd90ecfe48994c20"},
+  {"path":"/docs/nested/deep/file.bin","size":100000,"sha256":"d286160f31a98f029299cbb93d34abeb0991a00b2526d754f9f1a6f9334ebe95"},
+  {"path":"/llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll.txt","size":14,"sha256":"9e7278cf24f1b5d8bb083dadd7c97e429bcd6ff811236d73fba9445c4bebda4f"},
+  {"path":"/DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD/inside.txt","size":15,"sha256":"98f8183303f412e08677924856a42c77c26c9da13ed4890286389f2d847550ce"},
+  {"path":"/sub with space/a.txt","size":1,"sha256":"ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"}
+]
