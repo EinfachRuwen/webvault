@@ -12,6 +12,8 @@ export function serve(port) {
   return new Promise((resolve) => {
     const s = http.createServer((req, res) => {
       let p = path.join(root, decodeURIComponent(req.url.split('?')[0]));
+      // Verzeichnisse mit eigener index.html (z. B. /datenschutz/) wie bei Vercel ausliefern, sonst Rückfall auf die App
+      if (p.startsWith(root) && existsSync(p) && statSync(p).isDirectory() && existsSync(path.join(p, 'index.html'))) p = path.join(p, 'index.html');
       if (!p.startsWith(root) || !existsSync(p) || statSync(p).isDirectory()) p = path.join(root, 'index.html');
       res.writeHead(200, { ...headers, 'Content-Type': types[path.extname(p)] ?? 'application/octet-stream' });
       res.end(readFileSync(p));

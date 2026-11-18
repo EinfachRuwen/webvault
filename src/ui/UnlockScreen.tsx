@@ -5,6 +5,7 @@ import { Vault } from '../vault/vault';
 import { WrongPasswordError } from '../crypto/errors';
 import { errorMessage } from './format';
 import { ArrowLeftIcon, EyeIcon, EyeOffIcon, FolderIcon } from './icons';
+import { LegalLinks } from './LegalLinks';
 import { ConfirmDialog } from './Modal';
 
 export function UnlockScreen({ storage, onUnlocked, onBack }: { storage: VaultStorage; onUnlocked: (v: Vault) => void; onBack: () => void }) {
@@ -74,6 +75,7 @@ export function UnlockScreen({ storage, onUnlocked, onBack }: { storage: VaultSt
           {busy ? 'Entsperre …' : 'Entsperren'}
         </button>
       </form>
+      <LegalLinks />
       {confirmBack && (
         <ConfirmDialog
           title="Nicht exportierte Änderungen verwerfen?"

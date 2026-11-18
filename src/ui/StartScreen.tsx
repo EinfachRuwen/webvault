@@ -6,6 +6,7 @@ import type { VaultStorage } from '../storage/types';
 import { ZipStorage } from '../storage/zipRead';
 import { errorMessage } from './format';
 import { FolderIcon, ShieldIcon } from './icons';
+import { LegalLinks } from './LegalLinks';
 
 /** Nur lesbare Speicher werden im Änderungspaket-Modus betrieben, damit trotzdem hochgeladen werden kann. */
 const stage = (s: VaultStorage): VaultStorage => (s.writable ? s : new StagedStorage(s));
@@ -151,11 +152,7 @@ export function StartScreen({ onStorage }: { onStorage: (s: VaultStorage) => voi
         <li><strong>Kompatibel.</strong> Liest und schreibt das Cryptomator-Format 7/8 (AES-SIV + AES-GCM bzw. CTR-HMAC), getestet gegen die offizielle Bibliothek.</li>
         <li><strong>Sync-Ordner geeignet.</strong> Funktioniert mit jedem lokal synchronisierten Tresor (Dropbox, iCloud, OneDrive, Nextcloud …).</li>
       </ul>
-      <p className="hint center">
-        <a href="https://focusonruwen.com/impressum" target="_blank" rel="noopener">Impressum</a>
-        {" · "}
-        <a href="https://focusonruwen.com/datenschutz" target="_blank" rel="noopener">Datenschutz</a>
-      </p>
+      <LegalLinks />
     </div>
   );
 }

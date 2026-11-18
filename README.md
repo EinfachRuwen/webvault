@@ -24,6 +24,7 @@ Komplett clientseitig: kein Backend, kein Upload, kein Konto. Als statische Seit
 - Namen aus dem Tresor werden beim ZIP-Export gegen „Zip-Slip“ gesäubert, scrypt-Parameter aus `masterkey.cryptomator` werden begrenzt.
 - Kryptografie: WebCrypto (AES-CTR/CBC/GCM, HMAC, SHA-1/256, AES-KW), `@noble/hashes` (scrypt). AES-SIV (RFC 5297) ist selbst auf WebCrypto aufgebaut
   und gegen die RFC-Testvektoren geprüft.
+- Datenschutzerklärung: [`/datenschutz/`](https://vault.deploy.by0.link/datenschutz/) (Quelle `datenschutz/index.html`), technische Dokumentation mit Fundstellen in [`docs/PRIVACY-TECHNICAL.md`](docs/PRIVACY-TECHNICAL.md).
 - Das Projekt wurde **nicht** von Cryptomator-Entwicklern auditiert. Für besonders sensible Daten gilt: Tresor vor der ersten Nutzung sichern.
 
 ## Funktionsweise im Browser
@@ -98,5 +99,7 @@ src/crypto/    Cryptomator-Kryptografie (SIV, Masterkey, Namen, Dateiinhalt) –
 src/storage/   Ordnerzugriff: File System Access API (lesen/schreiben), FileList und ZIP (nur lesen), StagedStorage (Überlagerung für Änderungspakete)
 src/vault/     Vault: entsperren, auflisten, lesen, hochladen, anlegen, umbenennen, löschen, indexieren
 src/ui/        React-Oberfläche
+datenschutz/   Datenschutzerklärung (statische Seite, zweiter Vite-Einstieg)
+docs/          interne Dokumentation (wird nicht ausgeliefert)
 tests/         Unit-, Interop- und Browser-Tests; fixtures/ = von der Referenzimplementierung erzeugte Tresore
 ```

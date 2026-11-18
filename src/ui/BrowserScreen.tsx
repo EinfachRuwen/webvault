@@ -10,6 +10,7 @@ import {
   AudioIcon, ChevronIcon, DownloadIcon, FileIcon, FolderIcon, FolderPlusIcon, ImageIcon, LockIcon,
   PencilIcon, SearchIcon, TextIcon, TrashIcon, UploadIcon, VideoIcon,
 } from './icons';
+import { LegalLinks } from './LegalLinks';
 import { ConfirmDialog, PromptDialog } from './Modal';
 import { Preview } from './Preview';
 import { TransferPanel } from './TransferPanel';
@@ -445,6 +446,7 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
         <footer className="status">
           <span>{listing && !searchingAll ? `${listing.entries.length} Einträge` : ''}</span>
           <span>Format {vault.format} · {vault.cipherCombo === 'SIV_GCM' ? 'AES-GCM' : 'AES-CTR + HMAC'} · alles lokal entschlüsselt</span>
+          <LegalLinks className="legal-links" />
         </footer>
       </main>
 
