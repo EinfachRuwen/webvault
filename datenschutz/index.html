@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="description" content="Datenschutzerklärung für WebVault (vault.deploy.by0.link): was beim Aufruf anfällt und was komplett in deinem Browser bleibt." />
+    <meta name="author" content="Ruwen Hohnholz" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <title>Datenschutz – WebVault</title>
+  </head>
+  <body>
+    <div class="legal">
+      <header class="legal-head">
+        <a class="legal-brand" href="/">
+          <span class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6z" /><path d="m9 12 2 2 4-4" /></svg>
+          </span>
+          WebVault
+        </a>
+        <a class="back-link" href="/">Zu WebVault</a>
+      </header>
+
+      <main id="inhalt">
+        <p class="kicker">Stand: 18. November 2026</p>
+        <h1>Datenschutz&shy;erklärung</h1>
+        <p class="lead">WebVault öffnet Cryptomator-Tresore komplett in deinem Browser. Passwort, Schlüssel, Dateinamen und Dateien erreichen weder mich noch einen anderen Server. Beim Aufruf der Seite fallen trotzdem technische Daten an. Welche das sind, steht hier.</p>
+
+        <section class="card" aria-labelledby="s1">
+          <h2 id="s1"><span class="no">01</span>Verantwortlicher und Geltungsbereich</h2>
+          <address>
+            Ruwen Hohnholz<br />
+            c/o Autorenglück #45094<br />
+            Albert-Einstein-Str. 47<br />
+            02977 Hoyerswerda<br />
+            E-Mail: <a href="mailto:info@focusonruwen.com">info@focusonruwen.com</a>
+          </address>
+          <p>Diese Datenschutzerklärung gilt für WebVault unter vault.deploy.by0.link, einschließlich dieser Seite. Alle meine Angebote sind private, nicht kommerzielle Projekte. Es gibt keine Werbung, keinen Verkauf von Daten und kein seitenübergreifendes Tracking. Einen Datenschutzbeauftragten habe ich nicht benannt.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s2">
+          <h2 id="s2"><span class="no">02</span>So arbeitet WebVault</h2>
+          <p>WebVault ist eine statische Seite ohne Server-Funktionen, ohne Datenbank und ohne Konto. Dein Browser lädt beim Aufruf die Programmdateien (HTML, JavaScript, CSS und ein Symbol). Alles Weitere passiert auf deinem Gerät.</p>
+          <p>Damit das nicht nur ein Versprechen ist, schickt der Server eine Sicherheitsrichtlinie (Content-Security-Policy) mit. Sie verbietet der Seite, nach dem Laden Daten an Server zu senden oder von dort abzurufen (<code>connect-src 'none'</code>), Formulare abzuschicken, Hintergrundprozesse (Worker) zu starten und Inhalte von fremden Servern einzubinden. Der Browser setzt das auch dann durch, wenn im Programm ein Fehler steckt.</p>
+          <p><strong>Was der Server sieht:</strong> nur die Abrufe der Programmdateien, wie unter 03 beschrieben. Er sieht nicht, ob und welchen Tresor du öffnest, und erfährt weder Passwort noch Dateinamen oder Inhalte.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s3">
+          <h2 id="s3"><span class="no">03</span>Hosting bei Vercel und Server-Logs</h2>
+          <p>Die Seite liegt bei Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA. Wenn du sie aufrufst, verarbeitet Vercel technisch notwendige Daten, um sie an deinen Browser auszuliefern und den Betrieb abzusichern:</p>
+          <ul>
+            <li>IP-Adresse und daraus abgeleitetes Land bzw. ungefährer Ort</li>
+            <li>Datum und Uhrzeit des Abrufs</li>
+            <li>aufgerufene Adresse samt Pfad</li>
+            <li>Statuscode und übertragene Datenmenge</li>
+            <li>Browser und Betriebssystem (User-Agent)</li>
+            <li>gegebenenfalls die verweisende Seite (Referrer), soweit dein Browser sie beim ersten Aufruf mitsendet</li>
+          </ul>
+          <p>Das gilt auch für die automatische Weiterleitung von <code>http://</code> auf <code>https://</code>, die ebenfalls Vercel ausführt.</p>
+          <p><strong>Rechtsgrundlage</strong> ist mein berechtigtes Interesse, die Seite zuverlässig und sicher auszuliefern (Art. 6 Abs. 1 lit. f DSGVO).</p>
+          <p><strong>Speicherdauer:</strong> In meinem Vercel-Konto sind Protokolle je nach Tarif nur kurz einsehbar, zwischen einer Stunde und einem Tag. Wie lange Vercel selbst Protokolle aufbewahrt, legt Vercel fest; nach eigenen Angaben nur so lange, wie es für den Betrieb, die Sicherheit und gesetzliche Pflichten nötig ist. Ich werte keine Protokolle aus und führe sie nicht mit anderen Daten zusammen.</p>
+          <p><strong>Übermittlung in die USA:</strong> Vercel kann die Daten in den USA und auf Servern weltweit verarbeiten. Vercel ist unter dem EU-US Data Privacy Framework zertifiziert; die Übermittlung stützt sich auf den Angemessenheitsbeschluss der EU-Kommission (Art. 45 DSGVO). Mehr dazu im <a href="https://vercel.com/legal/privacy-notice" rel="noopener">Datenschutzhinweis von Vercel</a>.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s4">
+          <h2 id="s4"><span class="no">04</span>Was nur auf deinem Gerät passiert</h2>
+          <p>Folgendes verarbeitet WebVault ausschließlich in deinem Browser. Ich erhalte davon nichts und habe keinen Zugriff darauf:</p>
+          <ul>
+            <li><strong>Tresor öffnen:</strong> Du wählst einen Tresor-Ordner oder eine ZIP-Datei aus oder ziehst sie auf die Seite. Der Browser gibt der Seite nur Zugriff auf genau diese Auswahl. ZIP-Dateien werden nicht hochgeladen, sondern lokal gelesen.</li>
+            <li><strong>Passwort und Schlüssel:</strong> Aus deinem Passwort wird lokal der Schlüssel abgeleitet (scrypt). Die Schlüssel liegen nur im Arbeitsspeicher, als nicht exportierbare Schlüssel der Web-Crypto-Schnittstelle; Zwischenwerte werden überschrieben. Das Passwort wird nirgends gespeichert.</li>
+            <li><strong>Ansehen, Suchen, Herunterladen:</strong> Dateinamen und Inhalte werden nur im Arbeitsspeicher entschlüsselt, etwa für die Vorschau oder die Suche. Was du herunterlädst, speichert dein Browser dort, wo du es festlegst.</li>
+            <li><strong>Hinzufügen und Ändern:</strong> Neue Dateien werden vor dem Schreiben verschlüsselt. In Chrome, Edge und Opera am Computer schreibt WebVault nach deiner Erlaubnis direkt in den gewählten Tresor-Ordner. In anderen Browsern werden Änderungen verschlüsselt im Arbeitsspeicher gesammelt und als „Änderungspaket“ (ZIP) zum Herunterladen angeboten.</li>
+            <li><strong>Automatische Sperre:</strong> Nach 15 Minuten ohne Eingabe sperrt WebVault den Tresor und gibt die Schlüssel frei. Beim Schließen des Tabs ist alles verworfen; hast du noch nicht exportierte Änderungen, warnt dich der Browser vorher.</li>
+          </ul>
+          <p>Diese Verarbeitung steuerst allein du auf deinem eigenen Gerät. Ich bestimme nicht, welche Daten du öffnest, und kann sie nicht einsehen.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s5">
+          <h2 id="s5"><span class="no">05</span>Cookies und Speicher in deinem Browser</h2>
+          <p>WebVault setzt keine Cookies und legt nichts im Speicher deines Browsers ab: kein <code>localStorage</code>, kein <code>sessionStorage</code>, keine IndexedDB, keinen Service Worker und keinen Offline-Cache.</p>
+          <p>Zwei Dinge merkt sich unter Umständen dein Browser selbst, wenn du in Chrome, Edge oder Opera einen Ordner über den Auswahldialog öffnest: den zuletzt gewählten Ort, damit der Dialog beim nächsten Mal dort startet, und die Zugriffserlaubnis, die du erteilt hast. Beides verwaltet der Browser; WebVault liest es nicht aus und überträgt es nicht. Soweit dafür Informationen auf deinem Gerät gespeichert werden, ist das für die von dir ausdrücklich gewünschte Ordnerauswahl unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Du kannst die Erlaubnis in den Website-Einstellungen deines Browsers jederzeit entziehen.</p>
+          <p>Eine Einwilligung ist für nichts davon nötig, deshalb gibt es keinen Cookie-Banner.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s6">
+          <h2 id="s6"><span class="no">06</span>Keine Statistik, keine fremden Inhalte</h2>
+          <p>Auf WebVault gibt es keine Reichweitenmessung, auch nicht mit dem Statistikwerkzeug Umami, das ich auf anderen Seiten nutze, kein Tracking, keine Werbung und keine eingebetteten Inhalte Dritter. Schriften werden nicht geladen; die Seite nutzt die Systemschrift deines Geräts. Es gibt keine Verbindungen zu CDNs oder anderen Anbietern.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s7">
+          <h2 id="s7"><span class="no">07</span>Links zu anderen Seiten</h2>
+          <p>WebVault verlinkt auf mein Impressum und auf den Datenschutzhinweis von Vercel. Erst wenn du einen Link anklickst, ruft dein Browser die Zielseite auf; dort gilt deren Datenschutzerklärung. Weil WebVault die Herkunft nicht mitsenden lässt (<code>Referrer-Policy: no-referrer</code>), erfährt die Zielseite nicht, dass du von hier kommst.</p>
+          <p>Der Impressum-Link führt über die Kurzadresse fcrw.cc, die über Cloudflare Inc. (USA) auf focusonruwen.com weiterleitet. Bei einem Klick verarbeitet Cloudflare dafür technische Verbindungsdaten wie deine IP-Adresse. Cloudflare ist unter dem EU-US Data Privacy Framework zertifiziert.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s8">
+          <h2 id="s8"><span class="no">08</span>Kontakt per E-Mail</h2>
+          <p>Wenn du mir schreibst, verarbeite ich deine E-Mail-Adresse und deine Nachricht, um dir zu antworten (Art. 6 Abs. 1 lit. f DSGVO). Ich lösche sie, wenn die Anfrage erledigt ist und keine Aufbewahrungsgründe bestehen. Bitte schick mir keine Tresor-Passwörter oder Tresor-Dateien.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s9">
+          <h2 id="s9"><span class="no">09</span>Deine Rechte</h2>
+          <p>Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Datenübertragbarkeit (Art. 20). Eine formlose E-Mail an <a href="mailto:info@focusonruwen.com">info@focusonruwen.com</a> genügt.</p>
+          <div class="callout">
+            <p class="callout-label">Widerspruchsrecht nach Art. 21 DSGVO</p>
+            <p>Soweit ich Daten auf Grundlage berechtigter Interessen verarbeite (Art. 6 Abs. 1 lit. f DSGVO), kannst du dieser Verarbeitung aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit widersprechen. Ich verarbeite die Daten dann nicht mehr, es sei denn, ich kann zwingende schutzwürdige Gründe nachweisen, die deine Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen.</p>
+          </div>
+          <p>Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren, insbesondere in dem Mitgliedstaat deines Aufenthaltsorts, deines Arbeitsplatzes oder des Orts des mutmaßlichen Verstoßes (Art. 77 DSGVO).</p>
+        </section>
+
+        <section class="card" aria-labelledby="s10">
+          <h2 id="s10"><span class="no">10</span>Pflicht zur Bereitstellung, automatisierte Entscheidungen</h2>
+          <p>Du bist nicht verpflichtet, Daten bereitzustellen. Ohne die Übertragung deiner IP-Adresse kann dein Browser die Seite aber technisch nicht laden. Eine automatisierte Entscheidungsfindung einschließlich Profiling (Art. 22 DSGVO) findet nicht statt.</p>
+        </section>
+
+        <section class="card" aria-labelledby="s11">
+          <h2 id="s11"><span class="no">11</span>Änderungen</h2>
+          <p>Ich passe diese Erklärung an, wenn sich WebVault oder das Hosting ändert. Es gilt die hier veröffentlichte Fassung.</p>
+        </section>
+      </main>
+
+      <footer class="legal-foot">
+        <span>Stand 18.11.2026</span>
+        <nav aria-label="Rechtliches">
+          <a href="/">Zu WebVault</a>
+          <a href="https://fcrw.cc/imprint">Impressum</a>
+          <a href="/datenschutz/" aria-current="page">Datenschutz</a>
+        </nav>
+      </footer>
+    </div>
+  </body>
+</html>
