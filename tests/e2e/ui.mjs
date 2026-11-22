@@ -97,6 +97,7 @@ check(true, 'Suche im ganzen Tresor findet Datei in docs/nested/deep');
 await shot('05-search-all');
 await page.locator('.path-btn').click();
 await page.locator('.crumb', { hasText: 'deep' }).waitFor();
+await page.locator('.files .name-text', { hasText: 'file.bin' }).waitFor({ timeout: 5000 }).catch(() => {});
 check((await names()).includes('file.bin'), 'Klick auf Pfad springt in den Ordner');
 await page.getByRole('button', { name: 'Tresor', exact: true }).click();
 await page.getByText('ganzer Tresor').click();

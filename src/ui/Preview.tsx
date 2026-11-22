@@ -5,6 +5,7 @@ import { fileInfo, isHeicName, playableMime } from './fileTypes';
 import { displayable } from '../media/heic';
 import { ArrowLeftIcon, ChevronIcon, CloseIcon, DownloadIcon } from './icons';
 import { Modal } from './Modal';
+import { useBackClose } from './useBackClose';
 
 const MAX_PREVIEW_BYTES = 256 * 1024 * 1024;
 const MAX_TEXT_CHARS = 1_000_000;
@@ -32,6 +33,7 @@ export function Preview({
   onClose: () => void;
 }) {
   const [state, setState] = useState<State>({ phase: 'loading', done: 0 });
+  useBackClose(onClose);
   const info = fileInfo(entry.name);
   const index = siblings.findIndex((s) => s.storagePath.join('/') === entry.storagePath.join('/'));
   const prev = index > 0 ? siblings[index - 1] : undefined;

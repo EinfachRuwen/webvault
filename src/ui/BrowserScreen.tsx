@@ -81,9 +81,13 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
   const folderInput = useRef<HTMLInputElement>(null);
 
   // Verzeichnis laden
+  const shownDir = useRef(dirId);
   useEffect(() => {
     let stale = false;
     setLoading(true);
+    // Beim Ordnerwechsel nicht kurz den alten Inhalt unter dem neuen Pfad zeigen (Fehlklick-Gefahr); beim Neuladen schon
+    if (shownDir.current !== dirId) setListing(null);
+    shownDir.current = dirId;
     vault
       .listDir(dirId)
       .then((l) => {

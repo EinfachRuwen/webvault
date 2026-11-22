@@ -8,6 +8,7 @@ import {
   allFiles, byCategory, type Category, CATEGORIES, categoryOf, type DirNode, emptyDirs, type FileRef,
   hashDuplicates, largest, removeFromTree, sameSizeGroups, scanTree, wasted,
 } from './scan';
+import { useBackClose } from '../ui/useBackClose';
 import './space.css';
 
 type Tab = 'tree' | 'bigdirs' | 'largest' | 'duplicates' | 'empty';
@@ -40,6 +41,7 @@ export function SpaceScreen({ vault, start, onClose, onReveal, onDownload }: {
   const [confirm, setConfirm] = useState<{ entry: VaultEntry; label: string } | null>(null);
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
+  useBackClose(() => onClose(changed));
 
   useEffect(() => {
     const ac = new AbortController();

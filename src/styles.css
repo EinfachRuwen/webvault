@@ -32,7 +32,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
+html, body { margin: 0; height: 100%; overscroll-behavior-y: none; } /* kein Pull-to-Refresh: würde den Tresor schließen */
 body {
   background: var(--bg);
   color: var(--text);
