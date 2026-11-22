@@ -79,7 +79,6 @@ Nicht vorhanden (per `grep` über `src/`, `index.html`, `public/` und Live-Prüf
 5. **Browser-eigener Speicher (#11):** Ob und wie lange Chromium den „zuletzt gewählten Ort“ und erteilte Erlaubnisse persistiert, ist Browser-Verhalten und kann sich ändern; die Erklärung formuliert „unter Umständen“.
 6. **Zentrale Erklärung:** sollte für WebVault auf `https://vault.deploy.by0.link/datenschutz/` verweisen und die oben genannten Abweichungen (Serverfunktionen, „keine Verbindungen“) angleichen.
 7. **Preview-Deployments:** Vercel-Previews können die Vercel-Toolbar einblenden (nur für eingeloggte Teammitglieder); die CSP blockt deren Skripte. Für Produktion ohne Bedeutung.
-8. **Swipe-Modus (nur Info):** Ein früher entwickelter Swipe-Modus (lokaler Branch `swipe-mode`, Commit `1696b96`, nicht gepusht) würde IndexedDB und – in Chromium – ein in IndexedDB gespeichertes Ordner-Handle sowie eine verschlüsselte Merkdatei außerhalb des Tresors nutzen. Wird er gemergt, müssen Abschn. 05 der Erklärung und diese Datei angepasst werden (§ 25 Abs. 2 Nr. 2 TDDDG, Speicherdauer, Löschweg).
 
 ## Pflege
 
