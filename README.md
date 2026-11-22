@@ -9,6 +9,10 @@ Komplett clientseitig: kein Backend, kein Upload, kein Konto. Als statische Seit
 - **Navigieren** durch Ordner (Breadcrumbs, Sortierung nach Name/Größe/Datum)
 - **Suchen** im aktuellen Ordner oder – per Index – im gesamten Tresor (nur Dateinamen)
 - **Vorschau** direkt im Browser: Bilder, Video, Audio, PDF, Text/Code (←/→ blättert durch den Ordner)
+- **Speicherplatz** wie TreeSize: aufklappbarer Ordnerbaum nach Größe mit Anteil, Dateizahl und Balken, größte Ordner und Dateien,
+  Verteilung nach Typ, leere Ordner und echte **Duplikate** (Inhaltsvergleich per SHA-256, nur auf Knopfdruck) – mit Zeigen, Herunterladen, Löschen
+- **HEIC** (iPhone-Fotos) in der Vorschau: Safari direkt, Chrome/Edge per WebCodecs lokal dekodiert; `.mov` spielt auch in Chrome
+- **Versteckte Dateien** (`.DS_Store`, `._…` von macOS) sind ausgeblendet; Schalter „versteckte“ zeigt sie
 - **Herunterladen** entschlüsselt: einzelne Dateien gestreamt, Ordner/Mehrfachauswahl als ZIP
 - **Hochladen** per Dialog oder Drag & Drop (auch ganze Ordner); Dateien werden vor dem Schreiben verschlüsselt
 - **Neuer Ordner, Umbenennen, Löschen**

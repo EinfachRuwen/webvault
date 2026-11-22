@@ -4,7 +4,7 @@ const TYPES: Record<string, [PreviewKind, string]> = {
   // Bilder (SVG wird nur per <img> gerendert – dort laufen keine Skripte)
   jpg: ['image', 'image/jpeg'], jpeg: ['image', 'image/jpeg'], png: ['image', 'image/png'], gif: ['image', 'image/gif'],
   webp: ['image', 'image/webp'], avif: ['image', 'image/avif'], bmp: ['image', 'image/bmp'], svg: ['image', 'image/svg+xml'],
-  ico: ['image', 'image/x-icon'],
+  ico: ['image', 'image/x-icon'], heic: ['image', 'image/heic'], heif: ['image', 'image/heif'],
   // Video
   mp4: ['video', 'video/mp4'], m4v: ['video', 'video/mp4'], webm: ['video', 'video/webm'], mov: ['video', 'video/quicktime'], ogv: ['video', 'video/ogg'],
   // Audio
@@ -28,4 +28,24 @@ export function fileInfo(name: string): { kind?: PreviewKind; mime: string } {
   if (known) return { kind: known[0], mime: known[1] };
   if (TEXT_EXT.has(ext)) return { kind: 'text', mime: 'text/plain' };
   return { mime: 'application/octet-stream' };
+}
+
+/** Versteckte Einträge im Mac/Unix-Sinn: Name beginnt mit einem Punkt (.DS_Store, ._IMG_1234.jpg, .webvault …). */
+export function isHiddenName(name: string): boolean {
+  return name.startsWith('.');
+}
+
+const HEIC_EXT = new Set(['heic', 'heif']);
+export const isHeicName = (name: string) => HEIC_EXT.has(extensionOf(name));
+
+let quicktimeOk: boolean | undefined;
+/**
+ * MIME-Typ für die Wiedergabe. Chrome/Edge lehnen `video/quicktime` ab, spielen iPhone-.mov (H.264/HEVC im
+ * ISO-Container) aber als `video/mp4` ab – deshalb wird dort umetikettiert.
+ */
+export function playableMime(name: string): string {
+  const { mime } = fileInfo(name);
+  if (mime !== 'video/quicktime' || typeof document === 'undefined') return mime;
+  quicktimeOk ??= document.createElement('video').canPlayType('video/quicktime') !== '';
+  return quicktimeOk ? mime : 'video/mp4';
 }

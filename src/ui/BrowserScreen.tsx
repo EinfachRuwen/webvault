@@ -8,11 +8,13 @@ import { fileInfo } from './fileTypes';
 import { errorMessage, formatBytes, formatDate } from './format';
 import {
   AudioIcon, ChevronIcon, DownloadIcon, FileIcon, FolderIcon, FolderPlusIcon, ImageIcon, LockIcon,
-  PencilIcon, SearchIcon, TextIcon, TrashIcon, UploadIcon, VideoIcon,
+  PencilIcon, PieIcon, SearchIcon, TextIcon, TrashIcon, UploadIcon, VideoIcon,
 } from './icons';
 import { LegalLinks } from './LegalLinks';
 import { ConfirmDialog, PromptDialog } from './Modal';
 import { Preview } from './Preview';
+import { SpaceScreen } from '../space/SpaceScreen';
+import { isHiddenName } from './fileTypes';
 import { TransferPanel } from './TransferPanel';
 import { useTransfers } from './transfers';
 import { uploadItems, type UploadItem } from './upload';
@@ -72,6 +74,9 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [notice, setNotice] = useState<string>();
   const [dragging, setDragging] = useState(false);
+  /** Punkt-Dateien (.DS_Store, ._Fotos von macOS …) sind standardmäßig ausgeblendet. */
+  const [showHidden, setShowHidden] = useState(false);
+  const [space, setSpace] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
 
@@ -145,6 +150,7 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
     } else {
       base = (listing?.entries ?? []).filter((e) => !q || e.name.toLowerCase().includes(q)).map((entry) => ({ entry }));
     }
+    if (!showHidden) base = base.filter((r) => !isHiddenName(r.entry.name) && !(r.trail ?? []).some((c) => isHiddenName(c.name)));
     const collator = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
     base.sort((a, b) => {
       const da = a.entry.kind === 'directory' ? 0 : 1;
@@ -156,7 +162,8 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
       return (c || collator.compare(a.entry.name, b.entry.name)) * sort.dir;
     });
     return base;
-  }, [listing, index, query, searchingAll, sort]);
+  }, [listing, index, query, searchingAll, sort, showHidden]);
+  const hiddenCount = useMemo(() => (showHidden ? 0 : (listing?.entries ?? []).filter((e) => isHiddenName(e.name)).length), [listing, showHidden]);
   const shownRows = useMemo(() => (searchingAll ? rows.slice(0, MAX_SEARCH_ROWS) : rows), [rows, searchingAll]);
 
   // Größe/Datum von Suchtreffern (Index enthält nur Namen) für die sichtbaren Zeilen nachladen.
@@ -288,7 +295,11 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
           <label className="chip" title="Durchsucht die Namen aller Ordner (Index wird einmalig aufgebaut)">
             <input type="checkbox" checked={scopeAll} onChange={(e) => setScopeAll(e.target.checked)} /> ganzer Tresor
           </label>
+          <label className="chip" title="Dateien und Ordner, deren Name mit einem Punkt beginnt (z. B. .DS_Store, ._Fotos von macOS)">
+            <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} /> versteckte
+          </label>
         </div>
+        <button className="btn" onClick={() => setSpace(true)} title="Speicherplatz: große Ordner und Dateien, Duplikate, leere Ordner"><PieIcon /> Speicher</button>
         <button className="btn" onClick={onLock}><LockIcon /> Sperren</button>
       </header>
 
@@ -444,7 +455,7 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
         </div>
 
         <footer className="status">
-          <span>{listing && !searchingAll ? `${listing.entries.length} Einträge` : ''}</span>
+          <span>{listing && !searchingAll ? `${listing.entries.length - hiddenCount} Einträge${hiddenCount ? ` · ${hiddenCount} versteckte ausgeblendet` : ''}` : ''}</span>
           <span>Format {vault.format} · {vault.cipherCombo === 'SIV_GCM' ? 'AES-GCM' : 'AES-CTR + HMAC'} · alles lokal entschlüsselt</span>
           <LegalLinks className="legal-links" />
         </footer>
@@ -458,6 +469,15 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
 
       {preview && (
         <Preview vault={vault} entry={preview} siblings={previewable} onNavigate={(e) => void vault.withMetadata(e).then(setPreview)} onDownload={(e) => doDownload([e])} onClose={() => setPreview(null)} />
+      )}
+      {space && (
+        <SpaceScreen
+          vault={vault}
+          start={trail}
+          onClose={(changed) => { setSpace(false); if (changed) afterChange(); }}
+          onReveal={(t, changed) => { setSpace(false); setQuery(''); setTrail(t); if (changed) afterChange(); }}
+          onDownload={doDownload}
+        />
       )}
       {dialog?.type === 'export' && <ExportDialog pending={pending} onExport={doExport} onClose={() => setDialog(null)} />}
       {dialog?.type === 'newFolder' && (

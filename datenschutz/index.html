@@ -24,7 +24,7 @@
       </header>
 
       <main id="inhalt">
-        <p class="kicker">Stand: 18. November 2026</p>
+        <p class="kicker">Stand: 22. November 2026</p>
         <h1>Datenschutz&shy;erklärung</h1>
         <p class="lead">WebVault öffnet Cryptomator-Tresore komplett in deinem Browser. Passwort, Schlüssel, Dateinamen und Dateien erreichen weder mich noch einen anderen Server. Beim Aufruf der Seite fallen trotzdem technische Daten an. Welche das sind, steht hier.</p>
 
@@ -72,6 +72,8 @@
             <li><strong>Passwort und Schlüssel:</strong> Aus deinem Passwort wird lokal der Schlüssel abgeleitet (scrypt). Die Schlüssel liegen nur im Arbeitsspeicher, als nicht exportierbare Schlüssel der Web-Crypto-Schnittstelle; Zwischenwerte werden überschrieben. Das Passwort wird nirgends gespeichert.</li>
             <li><strong>Ansehen, Suchen, Herunterladen:</strong> Dateinamen und Inhalte werden nur im Arbeitsspeicher entschlüsselt, etwa für die Vorschau oder die Suche. Was du herunterlädst, speichert dein Browser dort, wo du es festlegst.</li>
             <li><strong>Hinzufügen und Ändern:</strong> Neue Dateien werden vor dem Schreiben verschlüsselt. In Chrome, Edge und Opera am Computer schreibt WebVault nach deiner Erlaubnis direkt in den gewählten Tresor-Ordner. In anderen Browsern werden Änderungen verschlüsselt im Arbeitsspeicher gesammelt und als „Änderungspaket“ (ZIP) zum Herunterladen angeboten.</li>
+            <li><strong>Speicherplatz:</strong> Die Übersicht über große Ordner, Dateien und leere Ordner nutzt nur Größen und Datumsangaben aus dem Dateisystem. Nur wenn du Duplikate suchst, werden Dateien gleicher Größe im Arbeitsspeicher entschlüsselt und per Prüfsumme (SHA-256) verglichen. Gespeichert wird davon nichts.</li>
+            <li><strong>HEIC-Fotos:</strong> Kann dein Browser HEIC nicht selbst anzeigen, wandelt WebVault das Foto mit dem eingebauten Video-Decoder des Browsers (WebCodecs) im Arbeitsspeicher in ein anzeigbares Bild um.</li>
             <li><strong>Automatische Sperre:</strong> Nach 15 Minuten ohne Eingabe sperrt WebVault den Tresor und gibt die Schlüssel frei. Beim Schließen des Tabs ist alles verworfen; hast du noch nicht exportierte Änderungen, warnt dich der Browser vorher.</li>
           </ul>
           <p>Diese Verarbeitung steuerst allein du auf deinem eigenen Gerät. Ich bestimme nicht, welche Daten du öffnest, und kann sie nicht einsehen.</p>
@@ -122,7 +124,7 @@
       </main>
 
       <footer class="legal-foot">
-        <span>Stand 18.11.2026</span>
+        <span>Stand 22.11.2026</span>
         <nav aria-label="Rechtliches">
           <a href="/">Zu WebVault</a>
           <a href="https://fcrw.cc/imprint">Impressum</a>

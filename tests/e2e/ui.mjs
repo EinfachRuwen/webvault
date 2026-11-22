@@ -117,6 +117,38 @@ check(imgOk, 'Bildvorschau rendert (10×10 PNG)');
 await shot('06-preview-image');
 await page.keyboard.press('Escape');
 
+console.log('HEIC, versteckte Dateien');
+await page.locator('input[type=file]:not([webkitdirectory])').setInputFiles([
+  { name: 'foto.heic', mimeType: 'image/heic', buffer: readFileSync(path.join(HERE, '../fixtures/media/foto.heic')) },
+  { name: '._bild.png', mimeType: 'image/png', buffer: png },
+]);
+await page.locator('.files .name-text', { hasText: 'foto.heic' }).waitFor();
+check(!(await names()).includes('._bild.png'), 'macOS-Begleitdatei ._bild.png ist ausgeblendet');
+await page.getByText('versteckte', { exact: true }).click();
+await page.locator('.files .name-text', { hasText: '._bild.png' }).waitFor();
+check(true, 'Schalter „versteckte“ zeigt sie wieder');
+await page.getByText('versteckte', { exact: true }).click();
+await page.locator('.name-btn', { hasText: 'foto.heic' }).click();
+await page.locator('.preview-body img, .preview-body .alert-error').first().waitFor();
+const hevc = await page.evaluate(async () => typeof VideoDecoder !== 'undefined' && (await VideoDecoder.isConfigSupported({ codec: 'hvc1.1.6.L93.B0' })).supported);
+const heicOk = hevc
+  ? await page.locator('.preview-body img').evaluate((i) => i.complete && i.naturalWidth === 96).catch(() => false)
+  : /HEIC kann dieser Browser nicht/.test((await page.locator('.preview-body .alert-error').textContent().catch(() => '')) ?? '');
+check(heicOk, hevc ? 'HEIC wird per WebCodecs dekodiert (96×64)' : 'ohne HEVC-Decoder: verständliche HEIC-Meldung');
+await page.keyboard.press('Escape');
+
+console.log('Speicherplatz');
+await page.getByRole('button', { name: 'Speicher' }).click();
+await page.locator('.sp-big').waitFor();
+check(/\d/.test(await page.locator('.sp-big').textContent()), `Gesamtgröße angezeigt: ${await page.locator('.sp-big').textContent()}`);
+await page.getByRole('tab', { name: 'Größte Dateien' }).click();
+check((await page.locator('.sp-list .sp-main strong').first().textContent()) === bigName, 'größte Datei steht oben');
+await shot('06c-space');
+await page.getByRole('tab', { name: /Duplikate/ }).click();
+await page.locator('.sp-card').waitFor();
+await page.getByRole('button', { name: 'Speicherplatz schließen' }).click();
+await page.locator('.space').waitFor({ state: 'detached' });
+
 console.log('Ordner, Umbenennen, Löschen');
 await page.getByRole('button', { name: 'Neuer Ordner' }).click();
 await page.getByLabel('Name des Ordners').fill('Meine Ablage');

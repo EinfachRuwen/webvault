@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Vault, VaultEntry } from '../vault/vault';
 import { errorMessage, formatBytes } from './format';
-import { fileInfo } from './fileTypes';
+import { fileInfo, isHeicName, playableMime } from './fileTypes';
+import { displayable } from '../media/heic';
 import { ArrowLeftIcon, ChevronIcon, CloseIcon, DownloadIcon } from './icons';
 import { Modal } from './Modal';
 
@@ -46,11 +47,14 @@ export function Preview({
         return setState({ phase: 'unsupported', reason: `Die Datei ist mit ${formatBytes(entry.size)} zu groß für die Vorschau. Lade sie stattdessen herunter.` });
       }
       try {
-        const blob = await vault.readFile(entry, {
+        const raw = await vault.readFile(entry, {
           signal: ac.signal,
-          type: info.mime,
+          type: info.kind === 'video' ? playableMime(entry.name) : info.mime,
           onProgress: (done) => setState({ phase: 'loading', done }),
         });
+        if (ac.signal.aborted) return;
+        // HEIC ohne Browser-Unterstützung: lokal per WebCodecs dekodieren
+        const blob = info.kind === 'image' ? (await displayable(raw, isHeicName(entry.name))).blob : raw;
         if (ac.signal.aborted) return;
         let text: string | undefined;
         let truncated = false;
