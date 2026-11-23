@@ -299,7 +299,7 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
 
   const doRename = (entry: VaultEntry, name: string) => {
     setDialog(null);
-    void run('rename', `„${entry.name}“ → „${name}“`, () => vault.renameEntry(entry, name)).then(afterChange);
+    void run('rename', `„${entry.name}“ → „${name}“`, async () => { await vault.renameEntry(entry, name); }).then(afterChange);
   };
 
   const doExport = () => {

@@ -352,13 +352,14 @@ export class Vault {
   }
 
   /** Benennt um. Die Nutzdaten werden unverändert (verschlüsselt) kopiert – der Inhalt hängt nicht vom Namen ab. */
-  async renameEntry(entry: VaultEntry, newName: string): Promise<void> {
+  /** Liefert den Eintrag unter neuem Namen. */
+  async renameEntry(entry: VaultEntry, newName: string): Promise<VaultEntry> {
     this.requireWritable();
     if (entry.kind === 'symlink') throw new VaultError('Symlinks können nicht umbenannt werden.');
     await this.assertRemovable(entry);
-    if (newName.normalize('NFC') === entry.name.normalize('NFC')) return;
+    if (newName.normalize('NFC') === entry.name.normalize('NFC')) return entry;
     await this.assertNameFree(entry.parentDirId, newName);
-    await this.relocate(entry, entry.parentDirId, newName);
+    return this.relocate(entry, entry.parentDirId, newName);
   }
 
   /**
