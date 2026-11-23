@@ -34,3 +34,6 @@ export const ShieldIcon = (p: P) => <Icon {...p}><path d="M12 3 5 6v5c0 4.5 3 8.
 export const EyeIcon = (p: P) => <Icon {...p}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></Icon>;
 export const EyeOffIcon = (p: P) => <Icon {...p}><path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4M6.5 6.5A17 17 0 0 0 2 12s3.5 7 10 7a9.700 9.700 0 0 0 4.200-1M9.900 9.900a3 3 0 0 0 4.200 4.200" /></Icon>;
 export const PieIcon = (p: P) => <Icon {...p}><path d="M12 3a9 9 0 1 0 9 9h-9z" /><path d="M15 3.5A9 9 0 0 1 20.5 9H15z" /></Icon>;
+export const MoveIcon = (p: P) => <Icon {...p}><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v3" /><path d="M3 7v10a2 2 0 0 0 2 2h7" /><path d="M15 17h7m0 0-3-3m3 3-3 3" /></Icon>;
+export const CopyIcon = (p: P) => <Icon {...p}><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></Icon>;
+export const PasteIcon = (p: P) => <Icon {...p}><path d="M9 4h6v3H9z" /><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2" /></Icon>;

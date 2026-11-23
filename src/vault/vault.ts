@@ -358,7 +358,66 @@ export class Vault {
     await this.assertRemovable(entry);
     if (newName.normalize('NFC') === entry.name.normalize('NFC')) return;
     await this.assertNameFree(entry.parentDirId, newName);
-    const loc = await this.locate(entry.parentDirId, newName, entry.kind);
+    await this.relocate(entry, entry.parentDirId, newName);
+  }
+
+  /**
+   * Verschiebt einen Eintrag in einen anderen Ordner. Bei Namensgleichheit wird automatisch umbenannt („foto (1).jpg“).
+   * `targetPath`: Ordner-IDs vom Root bis einschließlich Ziel – damit ein Ordner nicht in sich selbst wandert.
+   * Liefert den Eintrag am neuen Ort (z. B. zum Rückgängigmachen).
+   */
+  async moveEntry(entry: VaultEntry, targetDirId: string, targetPath: string[]): Promise<VaultEntry> {
+    this.requireWritable();
+    if (entry.kind === 'symlink') throw new VaultError('Symlinks können nicht verschoben werden.');
+    await this.assertRemovable(entry);
+    if (entry.parentDirId === targetDirId) return entry;
+    this.assertNotInside(entry, targetDirId, targetPath);
+    const name = await this.uniqueName(targetDirId, entry.name);
+    return this.relocate(entry, targetDirId, name);
+  }
+
+  /** Kopiert Datei oder Ordner (rekursiv) in einen Ordner; Inhalte werden als Chiffrat übernommen, nicht neu verschlüsselt. */
+  async copyEntry(
+    entry: VaultEntry,
+    targetDirId: string,
+    targetPath: string[],
+    opts: { signal?: AbortSignal; onFile?: () => void } = {},
+  ): Promise<VaultEntry> {
+    this.requireWritable();
+    if (entry.kind === 'symlink') throw new VaultError('Symlinks können nicht kopiert werden.');
+    this.assertNotInside(entry, targetDirId, targetPath);
+    opts.signal?.throwIfAborted();
+    const name = await this.uniqueName(targetDirId, entry.name);
+    if (entry.kind === 'directory') {
+      const created = await this.createDirectory(targetDirId, name);
+      const { entries } = await this.listDir(entry.dirId ?? '', { stat: false });
+      for (const child of entries) {
+        if (child.kind !== 'symlink') await this.copyEntry(child, created.dirId!, [...targetPath, created.dirId!], opts);
+      }
+      return created;
+    }
+    const loc = await this.locate(targetDirId, name, 'file');
+    try {
+      if (loc.shortened) await this.storage.writeFile([...loc.storagePath, 'name.c9s'], encoder.encode(loc.fullName));
+      // Der Dateiinhalt ist nicht an Pfad oder Namen gebunden (eigener Dateischlüssel im Header) – Chiffrat kopieren genügt.
+      await this.storage.writeFile(loc.payloadPath, await this.storage.getFile(entry.payloadPath));
+    } catch (e) {
+      await this.storage.remove(loc.storagePath, true).catch(() => {});
+      throw e;
+    }
+    opts.onFile?.();
+    return { ...entry, name, parentDirId: targetDirId, storagePath: loc.storagePath, payloadPath: loc.payloadPath, removable: true };
+  }
+
+  private assertNotInside(entry: VaultEntry, targetDirId: string, targetPath: string[]): void {
+    if (entry.kind === 'directory' && entry.dirId !== undefined && (targetDirId === entry.dirId || targetPath.includes(entry.dirId))) {
+      throw new VaultError(`„${entry.name}“ kann nicht in sich selbst verschoben oder kopiert werden.`);
+    }
+  }
+
+  /** Neu schreiben, dann alt entfernen. Schlägt das Schreiben fehl, wird das Halbfertige wieder gelöscht – das Original bleibt. */
+  private async relocate(entry: VaultEntry, targetDirId: string, name: string): Promise<VaultEntry> {
+    const loc = await this.locate(targetDirId, name, entry.kind as 'file' | 'directory');
     try {
       if (loc.shortened) await this.storage.writeFile([...loc.storagePath, 'name.c9s'], encoder.encode(loc.fullName));
       if (entry.kind === 'directory') {
@@ -371,5 +430,6 @@ export class Vault {
       throw e;
     }
     await this.storage.remove(entry.storagePath, true);
+    return { ...entry, name: name.normalize('NFC'), parentDirId: targetDirId, storagePath: loc.storagePath, payloadPath: loc.payloadPath };
   }
 }

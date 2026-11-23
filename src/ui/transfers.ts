@@ -6,7 +6,7 @@ const AUTO_DISMISS_MS = 5000;
 export interface Transfer {
   id: number;
   label: string;
-  kind: 'upload' | 'download' | 'delete' | 'rename';
+  kind: 'upload' | 'download' | 'delete' | 'rename' | 'move' | 'copy';
   done: number;
   total?: number;
   status: 'running' | 'done' | 'error' | 'cancelled';

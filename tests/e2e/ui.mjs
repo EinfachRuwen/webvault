@@ -167,6 +167,60 @@ await page.getByRole('button', { name: 'Löschen', exact: true }).click();
 await page.waitForFunction(() => ![...document.querySelectorAll('.name-text')].some((e) => e.textContent === 'empty.bin'));
 check(true, 'Löschen funktioniert');
 
+console.log('Dateimanager: Verschieben, Kopieren, Drag & Drop');
+{
+  const row = (n) => page.locator('.files tbody tr', { has: page.locator('.name-text', { hasText: new RegExp(`^${n.replace(/[.()]/g, '\\$&')}$`) }) });
+  await page.getByRole('button', { name: 'Neuer Ordner' }).click();
+  await page.getByLabel('Name des Ordners').fill('Ziel');
+  await page.getByRole('button', { name: 'Anlegen' }).click();
+  await row('Ziel').waitFor();
+  // Datei per Drag & Drop auf einen Ordner → verschoben
+  await row('umbenannt.png').dragTo(row('Ziel'));
+  await page.getByText(/nach „Ziel“ verschoben/).waitFor();
+  await row('umbenannt.png').waitFor({ state: 'detached' });
+  check(!(await names()).includes('umbenannt.png'), 'Drag & Drop auf Ordner verschiebt die Datei');
+  await page.getByRole('button', { name: 'Rückgängig' }).click();
+  await row('umbenannt.png').waitFor();
+  check(true, 'Verschieben lässt sich rückgängig machen');
+  // Kopieren über den Ordner-Dialog
+  await row('umbenannt.png').locator('input[type=checkbox]').check();
+  await page.getByRole('button', { name: 'Kopieren', exact: true }).click();
+  await page.locator('.picker-item', { hasText: 'Ziel' }).click();
+  await page.getByRole('button', { name: 'Hierher kopieren' }).click();
+  await page.locator('.transfer-done').last().waitFor();
+  check((await names()).includes('umbenannt.png'), 'Original bleibt beim Kopieren');
+  // Ausschneiden + Einfügen per Tastatur im Zielordner
+  await page.getByRole('button', { name: 'Neuer Ordner' }).click();
+  await page.getByLabel('Name des Ordners').fill('Kiste');
+  await page.getByRole('button', { name: 'Anlegen' }).click();
+  await row('Kiste').waitFor();
+  await row('Kiste').locator('input[type=checkbox]').check();
+  await page.keyboard.press('ControlOrMeta+x');
+  await page.locator('.name-btn', { hasText: /^Ziel$/ }).click();
+  await page.locator('.crumb', { hasText: 'Ziel' }).waitFor();
+  await page.getByRole('button', { name: /Einfügen \(1\)/ }).waitFor();
+  await page.keyboard.press('ControlOrMeta+v');
+  await row('Kiste').waitFor();
+  check((await names()).includes('umbenannt.png') && (await names()).includes('Kiste'), 'Kopie im Ziel, Ordner per ⌘X/⌘V verschoben');
+  // Ordner nicht in sich selbst ziehen
+  await row('Kiste').dragTo(page.locator('.crumb', { hasText: 'Ziel' }));
+  await page.waitForTimeout(300);
+  check((await names()).includes('Kiste'), 'Ordner lässt sich nicht in sich selbst ziehen');
+  await page.getByRole('button', { name: 'Tresor', exact: true }).click();
+  await row('Ziel').waitFor();
+  check(!(await names()).includes('Kiste'), 'verschobener Ordner ist am alten Ort weg');
+  // Dateien vom Computer direkt auf einen Ordner ziehen → dort hochladen
+  const dt = await page.evaluateHandle(() => { const d = new DataTransfer(); d.items.add(new File(['hallo'], 'reingezogen.txt', { type: 'text/plain' })); return d; });
+  await row('Ziel').dispatchEvent('dragover', { dataTransfer: dt });
+  await row('Ziel').dispatchEvent('drop', { dataTransfer: dt });
+  await page.locator('.name-btn', { hasText: /^Ziel$/ }).click();
+  await page.locator('.files .name-text', { hasText: 'reingezogen.txt' }).waitFor();
+  check(true, 'Datei vom Computer auf Ordner gezogen → dort hochgeladen');
+  await shot('07b-dateimanager');
+  await page.getByRole('button', { name: 'Tresor', exact: true }).click();
+  await row('Ziel').waitFor();
+}
+
 console.log('Download (entschlüsselt)');
 await page.getByRole('button', { name: 'Erledigte entfernen' }).click().catch(() => {});
 await page.getByRole('button', { name: `${bigName} herunterladen` }).click();

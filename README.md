@@ -15,7 +15,10 @@ Komplett clientseitig: kein Backend, kein Upload, kein Konto. Als statische Seit
 - **Versteckte Dateien** (`.DS_Store`, `._…` von macOS) sind ausgeblendet; Schalter „versteckte“ zeigt sie
 - **Herunterladen** entschlüsselt: einzelne Dateien gestreamt, Ordner/Mehrfachauswahl als ZIP
 - **Hochladen** per Dialog oder Drag & Drop (auch ganze Ordner); Dateien werden vor dem Schreiben verschlüsselt
-- **Neuer Ordner, Umbenennen, Löschen**
+- **Dateimanager:** Neuer Ordner, Umbenennen, Löschen, **Verschieben und Kopieren** – per Drag & Drop auf Ordner oder den Pfad oben
+  (⌥/Strg beim Loslassen = kopieren), über „Verschieben/Kopieren nach …“ (auch am Handy), oder mit ⌘X/⌘C/⌘V; Duplizieren; Mehrfachauswahl mit
+  Shift-Klick; ⌘A, Entf, F2, Esc; Dateien vom Computer direkt auf einen Ordner ziehen; Verschieben lässt sich rückgängig machen.
+  Kopien übernehmen das Chiffrat unverändert, Verschieben schreibt erst neu und löscht dann – bei einem Fehler bleibt das Original.
 - Automatische **Sperre** nach 15 Minuten Inaktivität
 
 ## Datenschutz & Sicherheit

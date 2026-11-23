@@ -2,7 +2,7 @@ import type { Transfer } from './transfers';
 import { formatBytes } from './format';
 import { CloseIcon } from './icons';
 
-const KIND_LABEL = { upload: 'Hochladen', download: 'Herunterladen', delete: 'Löschen', rename: 'Umbenennen' } as const;
+const KIND_LABEL = { upload: 'Hochladen', download: 'Herunterladen', delete: 'Löschen', rename: 'Umbenennen', move: 'Verschieben', copy: 'Kopieren' } as const;
 
 export function TransferPanel({
   transfers,

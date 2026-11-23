@@ -247,3 +247,25 @@ table.files { width: 100%; border-collapse: collapse; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Dateimanager: Drag & Drop, Ordnerwahl */
+.files tr.drop-target td, .crumb.drop-target { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.files tr.drop-target td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.crumb.drop-target { outline: 2px dashed var(--accent); }
+.files tr[draggable='true'] { cursor: default; }
+.files tr.cut { opacity: 0.55; }
+.drag-ghost { position: fixed; top: -100px; left: -100px; padding: 0.35rem 0.75rem; border-radius: 999px; background: var(--accent); color: var(--accent-contrast); font-weight: 600; font-size: 0.9rem; }
+.picker { min-width: min(28rem, 90vw); }
+.picker-crumbs { margin: 0.5rem 0; flex-wrap: wrap; }
+.picker-list { list-style: none; margin: 0; padding: 0; max-height: 45vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+.picker-list > li + li { border-top: 1px solid var(--border); }
+.picker-list > .hint { padding: 0.7rem 0.9rem; margin: 0; }
+.picker-item { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.65rem 0.9rem; border: 0; background: none; text-align: left; }
+.picker-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-item:hover:not(:disabled) { background: var(--surface-2); }
+.picker-item:disabled { opacity: 0.4; }
+.picker-go { color: var(--muted); }
+.picker-new { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+.picker-new input { flex: 1; min-width: 0; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.picker-newbtn { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.6rem; }
+.undo-bar { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }

@@ -8,11 +8,12 @@ import { fileInfo } from './fileTypes';
 import { errorMessage, formatBytes, formatDate } from './format';
 import {
   AudioIcon, ChevronIcon, DownloadIcon, FileIcon, FolderIcon, FolderPlusIcon, ImageIcon, LockIcon,
-  PencilIcon, PieIcon, SearchIcon, TextIcon, TrashIcon, UploadIcon, VideoIcon,
+  CopyIcon, MoveIcon, PasteIcon, PencilIcon, PieIcon, SearchIcon, TextIcon, TrashIcon, UploadIcon, VideoIcon,
 } from './icons';
 import { LegalLinks } from './LegalLinks';
 import { ConfirmDialog, PromptDialog } from './Modal';
 import { Preview } from './Preview';
+import { FolderPicker } from './FolderPicker';
 import { SpaceScreen } from '../space/SpaceScreen';
 import { isHiddenName } from './fileTypes';
 import { TransferPanel } from './TransferPanel';
@@ -29,7 +30,12 @@ type Dialog =
   | { type: 'newFolder' }
   | { type: 'rename'; entry: VaultEntry }
   | { type: 'delete'; entries: VaultEntry[] }
-  | { type: 'export' };
+  | { type: 'export' }
+  | { type: 'pick'; mode: 'move' | 'copy'; entries: VaultEntry[] };
+
+/** Interner Drag-Typ: unterscheidet Verschieben im Tresor von Datei-Uploads vom Computer */
+const DRAG_TYPE = 'application/x-webvault-entries';
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
 const MAX_SEARCH_ROWS = 500;
 const keyOf = (e: VaultEntry) => e.storagePath.join('/');
@@ -76,6 +82,12 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
   const [dragging, setDragging] = useState(false);
   /** Punkt-Dateien (.DS_Store, ._Fotos von macOS …) sind standardmäßig ausgeblendet. */
   const [showHidden, setShowHidden] = useState(false);
+  /** Zwischenablage für Ausschneiden/Kopieren/Einfügen */
+  const [clip, setClip] = useState<{ mode: 'move' | 'copy'; entries: VaultEntry[] } | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [undo, setUndo] = useState<{ text: string; run: () => void } | null>(null);
+  const dragged = useRef<VaultEntry[]>([]);
+  const lastClicked = useRef<number | null>(null);
   const [space, setSpace] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -203,9 +215,8 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
     }
   };
 
-  const doUpload = (items: UploadItem[]) => {
+  const doUpload = (items: UploadItem[], target = dirId) => {
     if (!writable || items.length === 0) return;
-    const target = dirId;
     const label = items.length === 1 ? `„${items[0].file.name}“ hochladen` : `${items.length} Dateien hochladen`;
     void run('upload', label, (ctl) => uploadItems(vault, target, items, ctl)).then(afterChange);
   };
@@ -229,6 +240,62 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
       }
     }).then(afterChange);
   };
+
+  // ---------------------------------------------------------------- Verschieben, Kopieren, Duplizieren
+  const idsOf = (t: Crumb[]) => t.map((c) => c.dirId);
+  const doTransfer = (mode: 'move' | 'copy', entries: VaultEntry[], target: Crumb[]) => {
+    setDialog(null);
+    if (!writable || entries.length === 0) return;
+    const targetDirId = target.length ? target[target.length - 1].dirId : vault.rootDirId;
+    const where = target.length ? target[target.length - 1].name : 'Tresor';
+    // Originale im Änderungspaket-Modus können nicht gelöscht werden → dort nur kopieren
+    const effective = mode === 'move' && entries.some((e) => e.removable === false) ? 'copy' : mode;
+    if (effective !== mode) setNotice('Originale lassen sich in diesem Browser nicht verschieben – sie werden stattdessen kopiert.');
+    const what = entries.length === 1 ? `„${entries[0].name}“` : `${entries.length} Einträge`;
+    const moved: { from: string; to: VaultEntry }[] = [];
+    void run(effective, `${what} → „${where}“`, async (ctl) => {
+      for (const [i, e] of entries.entries()) {
+        ctl.signal.throwIfAborted();
+        ctl.progress(i, entries.length);
+        if (effective === 'move') {
+          const to = await vault.moveEntry(e, targetDirId, idsOf(target));
+          if (to !== e) moved.push({ from: e.parentDirId, to });
+        } else {
+          await vault.copyEntry(e, targetDirId, idsOf(target), { signal: ctl.signal });
+        }
+      }
+      ctl.progress(entries.length, entries.length);
+    }).then(() => {
+      afterChange();
+      setSelected(new Set());
+      if (moved.length) {
+        setUndo({
+          text: `${moved.length === 1 ? `„${moved[0].to.name}“` : `${moved.length} Einträge`} nach „${where}“ verschoben.`,
+          run: () => {
+            setUndo(null);
+            void run('move', 'Verschieben rückgängig', async () => {
+              for (const m of moved) await vault.moveEntry(m.to, m.from, []);
+            }).then(afterChange);
+          },
+        });
+      }
+    });
+  };
+  const doDuplicate = (entries: VaultEntry[]) => {
+    const what = entries.length === 1 ? `„${entries[0].name}“` : `${entries.length} Einträge`;
+    void run('copy', `${what} duplizieren`, async (ctl) => {
+      for (const [i, e] of entries.entries()) {
+        ctl.signal.throwIfAborted();
+        ctl.progress(i, entries.length);
+        await vault.copyEntry(e, e.parentDirId, [], { signal: ctl.signal });
+      }
+    }).then(afterChange);
+  };
+  useEffect(() => {
+    if (!undo) return;
+    const t = window.setTimeout(() => setUndo(null), 12_000);
+    return () => window.clearTimeout(t);
+  }, [undo]);
 
   const doRename = (entry: VaultEntry, name: string) => {
     setDialog(null);
@@ -268,10 +335,64 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
     void collectDropped(e.dataTransfer).then(doUpload).catch((err) => setNotice(errorMessage(err)));
   };
 
+  const isInternal = (e: DragEvent) => Array.from(e.dataTransfer.types).includes(DRAG_TYPE);
+  const onRowDragStart = (e: DragEvent, entry: VaultEntry) => {
+    const list = selected.has(keyOf(entry)) ? selectedEntries : [entry];
+    dragged.current = list;
+    e.dataTransfer.setData(DRAG_TYPE, String(list.length));
+    e.dataTransfer.effectAllowed = 'copyMove';
+    if (list.length > 1) {
+      const ghost = document.createElement('div');
+      ghost.className = 'drag-ghost';
+      ghost.textContent = `${list.length} Einträge`;
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, 12, 12);
+      window.setTimeout(() => ghost.remove());
+    }
+  };
+  /** Ordnerzeilen und Pfad oben als Ablageziel: intern = verschieben (⌥/Strg = kopieren), vom Computer = hochladen */
+  const dropProps = (target: Crumb[], key: string) => ({
+    onDragOver: (e: DragEvent) => {
+      const internal = isInternal(e);
+      if (!writable || (!internal && !hasFiles(e))) return;
+      const tid = target.length ? target[target.length - 1].dirId : vault.rootDirId;
+      if (internal && dragged.current.some((d) => d.kind === 'directory' && (d.dirId === tid || idsOf(target).includes(d.dirId ?? '')))) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = internal ? (e.altKey || e.ctrlKey ? 'copy' : 'move') : 'copy';
+      if (dropTarget !== key) setDropTarget(key);
+    },
+    onDragLeave: () => setDropTarget((t) => (t === key ? null : t)),
+    onDrop: (e: DragEvent) => {
+      setDropTarget(null);
+      setDragging(false);
+      if (!writable) return;
+      const tid = target.length ? target[target.length - 1].dirId : vault.rootDirId;
+      if (isInternal(e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        doTransfer(e.altKey || e.ctrlKey ? 'copy' : 'move', dragged.current, target);
+        dragged.current = [];
+      } else if (hasFiles(e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        void collectDropped(e.dataTransfer).then((items) => doUpload(items, tid)).catch((err) => setNotice(errorMessage(err)));
+      }
+    },
+  });
+
   // Auswahl
   const visibleKeys = shownRows.map((r) => keyOf(r.entry));
   const allSelected = visibleKeys.length > 0 && visibleKeys.every((k) => selected.has(k));
   const selectedEntries = shownRows.map((r) => r.entry).filter((e) => selected.has(keyOf(e)));
+  const clickCheck = (e: React.MouseEvent, index: number) => {
+    const from = lastClicked.current;
+    lastClicked.current = index;
+    if (!e.shiftKey || from === null) return;
+    e.preventDefault();
+    const [a, b] = from < index ? [from, index] : [index, from];
+    setSelected((s) => new Set([...s, ...visibleKeys.slice(a, b + 1)]));
+  };
   const toggle = (k: string) =>
     setSelected((s) => {
       const n = new Set(s);
@@ -279,6 +400,23 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
       else n.add(k);
       return n;
     });
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!!dialog || !!preview || space) return;
+      if ((e.target as HTMLElement | null)?.closest?.('input:not([type=checkbox]):not([type=radio]), textarea, select, [contenteditable]')) return;
+      const mod = e.metaKey || e.ctrlKey;
+      const k = e.key.toLowerCase();
+      if (mod && k === 'a') { e.preventDefault(); setSelected(new Set(visibleKeys)); }
+      else if (mod && (k === 'c' || k === 'x') && selectedEntries.length) { e.preventDefault(); setClip({ mode: k === 'x' ? 'move' : 'copy', entries: selectedEntries }); }
+      else if (mod && k === 'v' && clip && writable) { e.preventDefault(); doTransfer(clip.mode, clip.entries, trail); if (clip.mode === 'move') setClip(null); }
+      else if ((k === 'delete' || (k === 'backspace' && mod)) && selectedEntries.length && writable) { e.preventDefault(); setDialog({ type: 'delete', entries: selectedEntries }); }
+      else if (k === 'f2' && selectedEntries.length === 1 && writable) { e.preventDefault(); setDialog({ type: 'rename', entry: selectedEntries[0] }); }
+      else if (k === 'escape' && (selected.size || clip)) { setSelected(new Set()); setClip(null); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   const sortBy = (key: SortKey) => setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
   const sortMark = (key: SortKey) => (sort.key === key ? (sort.dir === 1 ? ' ▲' : ' ▼') : '');
@@ -324,17 +462,33 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
           </p>
         )}
 
+        {undo && (
+          <p className="alert alert-info undo-bar" role="status">
+            {undo.text} <button className="link-btn" onClick={undo.run}>Rückgängig</button>
+            <button className="link-btn" onClick={() => setUndo(null)}>OK</button>
+          </p>
+        )}
+
         <div className="toolbar">
           <nav className="crumbs" aria-label="Ordnerpfad">
-            <button className="crumb" onClick={() => setTrail([])} disabled={trail.length === 0}>Tresor</button>
+            <button className={`crumb ${dropTarget === 'crumb:' ? 'drop-target' : ''}`} onClick={() => setTrail([])} disabled={trail.length === 0} {...dropProps([], 'crumb:')}>Tresor</button>
             {trail.map((c, i) => (
               <span key={c.dirId} className="crumb-wrap">
                 <ChevronIcon />
-                <button className="crumb" onClick={() => setTrail(trail.slice(0, i + 1))} disabled={i === trail.length - 1}>{c.name}</button>
+                <button className={`crumb ${dropTarget === `crumb:${c.dirId}` ? 'drop-target' : ''}`} onClick={() => setTrail(trail.slice(0, i + 1))} disabled={i === trail.length - 1} {...dropProps(trail.slice(0, i + 1), `crumb:${c.dirId}`)}>{c.name}</button>
               </span>
             ))}
           </nav>
           <div className="actions">
+            {clip && writable && (
+              <>
+                <button className="btn btn-primary" onClick={() => { doTransfer(clip.mode, clip.entries, trail); if (clip.mode === 'move') setClip(null); }}
+                  title={`${clip.mode === 'move' ? 'Ausgeschnittenes hierher verschieben' : 'Kopiertes hier einfügen'} (${isMac ? '⌘V' : 'Strg+V'})`}>
+                  <PasteIcon /> Einfügen ({clip.entries.length})
+                </button>
+                <button className="icon-btn" onClick={() => setClip(null)} aria-label="Zwischenablage leeren" title="Zwischenablage leeren"><span aria-hidden="true">×</span></button>
+              </>
+            )}
             {staged && pending.files > 0 && (
               <button className="btn btn-primary" onClick={() => setDialog({ type: 'export' })}>
                 <DownloadIcon /> Änderungspaket ({pending.files})
@@ -344,6 +498,13 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
               <>
                 <span className="muted">{selected.size} ausgewählt</span>
                 <button className="btn" onClick={() => doDownload(selectedEntries)}><DownloadIcon /> Herunterladen</button>
+                {writable && (
+                  <>
+                    <button className="btn" onClick={() => setDialog({ type: 'pick', mode: 'move', entries: selectedEntries })} title={`Verschieben nach … (oder auf einen Ordner ziehen · ${isMac ? '⌘X/⌘V' : 'Strg+X/Strg+V'})`}><MoveIcon /> Verschieben</button>
+                    <button className="btn" onClick={() => setDialog({ type: 'pick', mode: 'copy', entries: selectedEntries })} title={`Kopieren nach … (oder mit ${isMac ? '⌥' : 'Strg'} auf einen Ordner ziehen · ${isMac ? '⌘C/⌘V' : 'Strg+C/Strg+V'})`}><CopyIcon /> Kopieren</button>
+                    <button className="btn" onClick={() => doDuplicate(selectedEntries)} title="Kopie im selben Ordner anlegen">Duplizieren</button>
+                  </>
+                )}
                 {writable && (
                   <button
                     className="btn btn-danger-outline"
@@ -398,12 +559,21 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
               </tr>
             </thead>
             <tbody>
-              {shownRows.map((row) => {
+              {shownRows.map((row, index) => {
                 const entry = meta.get(keyOf(row.entry)) ?? row.entry;
                 const k = keyOf(entry);
+                const isCut = clip?.mode === 'move' && clip.entries.some((c) => keyOf(c) === k);
+                const folderTarget = entry.kind === 'directory' && entry.dirId ? [...(row.trail ?? trail), { dirId: entry.dirId, name: entry.name }] : null;
                 return (
-                  <tr key={k} className={selected.has(k) ? 'selected' : ''}>
-                    <td className="col-check"><input type="checkbox" checked={selected.has(k)} onChange={() => toggle(k)} aria-label={`${entry.name} auswählen`} /></td>
+                  <tr
+                    key={k}
+                    className={`${selected.has(k) ? 'selected' : ''} ${dropTarget === k ? 'drop-target' : ''} ${isCut ? 'cut' : ''}`}
+                    draggable={writable && entry.kind !== 'symlink'}
+                    onDragStart={(e) => onRowDragStart(e, entry)}
+                    onDragEnd={() => { dragged.current = []; setDropTarget(null); }}
+                    {...(folderTarget ? dropProps(folderTarget, k) : {})}
+                  >
+                    <td className="col-check"><input type="checkbox" checked={selected.has(k)} onClick={(e) => clickCheck(e, index)} onChange={() => toggle(k)} aria-label={`${entry.name} auswählen`} /></td>
                     <td className="col-name">
                       <button className="name-btn" onClick={() => openRow(row)} disabled={entry.kind === 'symlink'} title={entry.name}>
                         <EntryIcon entry={entry} />
@@ -484,6 +654,9 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
         />
       )}
       {dialog?.type === 'export' && <ExportDialog pending={pending} onExport={doExport} onClose={() => setDialog(null)} />}
+      {dialog?.type === 'pick' && (
+        <FolderPicker vault={vault} mode={dialog.mode} entries={dialog.entries} start={trail} onPick={(t) => doTransfer(dialog.mode, dialog.entries, t)} onClose={() => setDialog(null)} />
+      )}
       {dialog?.type === 'newFolder' && (
         <PromptDialog title="Neuer Ordner" label="Name des Ordners" confirmLabel="Anlegen" onSubmit={doNewFolder} onClose={() => setDialog(null)} />
       )}
