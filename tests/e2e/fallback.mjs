@@ -108,6 +108,23 @@ console.log('ZIP-Datei (Handy-Pfad), erzeugt mit Info-ZIP');
   await page.keyboard.press('Escape');
   const [dl2] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'hello.txt herunterladen' }).click()]);
   check(readFileSync(await dl2.path(), 'utf8') === 'Hallo Welt ☺\n', 'Download aus dem ZIP ist bitgleich');
+  // Handy: lange drücken wählt aus, danach wählt Antippen weitere aus; Aktionen unten
+  {
+    const cdp = await ctx.newCDPSession(page);
+    const bb = await page.locator('.files tbody tr', { hasText: 'hello.txt' }).locator('.name-text').boundingBox();
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: bb.x + 10, y: bb.y + 8 }] });
+    await page.waitForTimeout(650);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(200);
+    check((await page.getByText('1 ausgewählt').count()) === 1 && !(await page.locator('.preview-body').count()), 'Handy: langes Drücken wählt aus (öffnet nicht)');
+    await page.locator('.files tbody tr', { hasText: 'docs' }).locator('.name-btn').tap();
+    check((await page.getByText('2 ausgewählt').count()) === 1, 'Handy: danach wählt Antippen weitere aus');
+    const bar = await page.locator('.actions.has-selection').boundingBox();
+    check(bar && bar.y + bar.height >= 780 - 2, 'Handy: Auswahl-Aktionen als Leiste unten');
+    await page.screenshot({ path: `${OUT}/14b-mobile-select.png` });
+    await page.getByRole('button', { name: 'Auswahl aufheben' }).tap();
+    check((await page.getByText(/ausgewählt/).count()) === 0, 'Handy: Auswahl aufheben ohne Tastatur');
+  }
   await page.screenshot({ path: `${OUT}/14-mobile-browser.png` });
   check(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), 'kein horizontaler Overflow auf 390 px');
   check(problems.length === 0, `keine Konsolenfehler ${problems.join('; ')}`);

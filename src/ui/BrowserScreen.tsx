@@ -393,6 +393,29 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
     const [a, b] = from < index ? [from, index] : [index, from];
     setSelected((s) => new Set([...s, ...visibleKeys.slice(a, b + 1)]));
   };
+  // Handy: lange auf eine Zeile drücken wählt aus; solange etwas ausgewählt ist, wählt Antippen weitere aus (statt zu öffnen).
+  const press = useRef<{ timer: number; x: number; y: number; fired: boolean } | null>(null);
+  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  const rowPress = (k: string) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType !== 'touch' || (e.target as HTMLElement).closest('.col-check, .col-actions')) return;
+      const p = { x: e.clientX, y: e.clientY, fired: false, timer: 0 };
+      p.timer = window.setTimeout(() => { p.fired = true; toggle(k); navigator.vibrate?.(10); }, 450);
+      press.current = p;
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      const p = press.current;
+      if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 10) { clearTimeout(p.timer); press.current = null; }
+    },
+    onPointerUp: () => { if (press.current && !press.current.fired) { clearTimeout(press.current.timer); press.current = null; } },
+    onPointerCancel: () => { if (press.current) clearTimeout(press.current.timer); press.current = null; },
+    onContextMenu: (e: React.MouseEvent) => { if (coarse) e.preventDefault(); },
+    onClickCapture: (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest('.col-check, .col-actions')) return;
+      if (press.current?.fired) { e.preventDefault(); e.stopPropagation(); press.current = null; return; }
+      if (coarse && selected.size > 0) { e.preventDefault(); e.stopPropagation(); toggle(k); }
+    },
+  });
   const toggle = (k: string) =>
     setSelected((s) => {
       const n = new Set(s);
@@ -479,7 +502,7 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
               </span>
             ))}
           </nav>
-          <div className="actions">
+          <div className={`actions${selected.size > 0 ? ' has-selection' : ''}`}>
             {clip && writable && (
               <>
                 <button className="btn btn-primary" onClick={() => { doTransfer(clip.mode, clip.entries, trail); if (clip.mode === 'move') setClip(null); }}
@@ -496,6 +519,7 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
             )}
             {selected.size > 0 ? (
               <>
+                <button className="icon-btn" onClick={() => setSelected(new Set())} aria-label="Auswahl aufheben" title="Auswahl aufheben (Esc)"><span aria-hidden="true">×</span></button>
                 <span className="muted">{selected.size} ausgewählt</span>
                 <button className="btn" onClick={() => doDownload(selectedEntries)}><DownloadIcon /> Herunterladen</button>
                 {writable && (
@@ -568,12 +592,13 @@ export function BrowserScreen({ vault, onLock }: { vault: Vault; onLock: () => v
                   <tr
                     key={k}
                     className={`${selected.has(k) ? 'selected' : ''} ${dropTarget === k ? 'drop-target' : ''} ${isCut ? 'cut' : ''}`}
-                    draggable={writable && entry.kind !== 'symlink'}
+                    draggable={writable && !coarse && entry.kind !== 'symlink'}
                     onDragStart={(e) => onRowDragStart(e, entry)}
                     onDragEnd={() => { dragged.current = []; setDropTarget(null); }}
                     {...(folderTarget ? dropProps(folderTarget, k) : {})}
+                    {...rowPress(k)}
                   >
-                    <td className="col-check"><input type="checkbox" checked={selected.has(k)} onClick={(e) => clickCheck(e, index)} onChange={() => toggle(k)} aria-label={`${entry.name} auswählen`} /></td>
+                    <td className="col-check"><label className="check-hit"><input type="checkbox" checked={selected.has(k)} onClick={(e) => clickCheck(e, index)} onChange={() => toggle(k)} aria-label={`${entry.name} auswählen`} /></label></td>
                     <td className="col-name">
                       <button className="name-btn" onClick={() => openRow(row)} disabled={entry.kind === 'symlink'} title={entry.name}>
                         <EntryIcon entry={entry} />
